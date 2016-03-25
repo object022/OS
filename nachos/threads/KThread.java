@@ -191,8 +191,13 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
+	
+	toBeDestroyed.joinLock.acquire();
+	toBeDestroyed.status = statusFinished;
+	toBeDestroyed.joinCond.wakeAll();
+	toBeDestroyed.joinLock.release();
 
-	currentThread.status = statusFinished;
+	
 	
 	sleep();
     }
@@ -272,9 +277,17 @@ public class KThread {
      * call is not guaranteed to return. This thread must not be the current
      * thread.
      */
+    
+    // CondVar to implement Join()
+    public Lock joinLock = new Lock();
+    public Condition joinCond = new Condition(joinLock);
+    
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
-
+	joinLock.acquire();
+	if (status != statusFinished)
+		joinCond.sleep();
+	joinLock.release();
 	Lib.assertTrue(this != currentThread);
 
     }
