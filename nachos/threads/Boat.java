@@ -3,6 +3,34 @@ import nachos.ag.BoatGrader;
 
 public class Boat
 {
+	
+	/**
+	 * Notes on the Implementation of Boat(Project 1 Task 6)
+	 * 
+	 * The description is conflicting with itself. It states:
+	 * "You cannot pass the number of threads created to the
+	 *  threads representing adults and children"
+	 * while saying
+	 * "It's reasonable to allow a person to see how many children
+	 *  or adults are on the same island"
+	 *  
+	 * Does this mean that we can bypass the first constraint
+	 * by storing the number of children in a shared variable?
+	 *  
+	 * Consider if this is not possible, then we're unable to determine
+	 * how many person are on the island of Oahu, nor if there are anyone
+	 * left on Oahu from the view of a people. This will inevitably
+	 * lead to a deadlock where one last children waiting another
+	 * when he can't figure out if there is still one more children.
+	 *  
+	 * Another way is to use Alarm class. The last children on Oahu checks if someone
+	 * still there every second or so; The main boat process will terminate everyone
+	 * when there are no person left on Oahu. However, one may consider
+	 * this to be a busy-waiting behaviour and thus not allowed.
+	 *  
+	 * Anyway, I find this problem quite strange.. Maybe I need some clarification
+	 * from the staff.
+	 */
     static BoatGrader bg;
     
     public static void selfTest()
