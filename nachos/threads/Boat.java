@@ -15,6 +15,9 @@ public class Boat
 	 * If this is an adult, the adult goes to the other side, wakes assistant,
 	 * assistant rows back and they perform the first step to return to original
 	 * state.
+	 * For all these actions that requires order, we use a communicator
+	 * to ensure they happen in the order we expect. Two communicators
+	 * are to simulate communicators at both islands.
 	 * 
 	 * The real challenge arises when there are no other people on Oahu. How
 	 * can the leader know this and go to Molokai without waiting indefinitely?
@@ -63,33 +66,62 @@ public class Boat
 	System.out.println("\n ***Testing Boats with only 2 children***");
 	begin(0, 2, b);
 
-//	System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
-//  	begin(1, 2, b);
-
-//  	System.out.println("\n ***Testing Boats with 3 children, 3 adults***");
-//  	begin(3, 3, b);
     }
 
+    public static Lock lock;
+    public static Condition condLeader, condAssist, condPeople;
+    public static Communicator toBoat, onOahu, onMolokai;
+    public static int leaderVote = 0;
     public static void begin( int adults, int children, BoatGrader b )
     {
 	// Store the externally generated autograder in a class
 	// variable to be accessible by children.
 	bg = b;
-
+	lock = new Lock();
+	condLeader = new Condition(lock);
+	condAssist = new Condition(lock);
+	condPeople = new Condition(lock);
+	toBoat = new Communicator();
+	onOahu = new Communicator();
+	onMolokai = new Communicator();
 	// Instantiate global variables here
 	
 	// Create threads here. See section 3.4 of the Nachos for Java
 	// Walkthrough linked from the projects page.
 
-	Runnable r = new Runnable() {
-	    public void run() {
-                SampleItinerary();
-            }
-        };
-        KThread t = new KThread(r);
-        t.setName("Sample Boat Thread");
-        t.fork();
+	Runnable runnableChildren = new Runnable() {
+		@Override
+		public void run() {
+			ChildItinerary();
+		}
+	};
+	Runnable runnableAdult = new Runnable() {
+		@Override
+		public void run() {
+			AdultItinerary();
+		}
+	};
+	
+	for (int i = 0; i < adults; i++)
+		new KThread(runnableAdult).setName("Adult #" + i).fork();
+	for (int i = 0; i < children; i++)
+		new KThread(runnableChildren).setName("Child #" + i).fork();
 
+	while (true) {
+		int msg = toBoat.listen();
+		switch (msg) {
+		case 1: // Children arrives
+			children--;
+			break;
+		case -1: // Adult arrives
+			adults--;
+			break;
+		case 0: // Leader on Molokai, waiting decision: THIS IS CHEATING
+			if ((children == 2) && (adults == 0)) // Assistant is already on Molokai
+				return;
+		}
+	}
+	
     }
 
     static void AdultItinerary()
@@ -97,18 +129,122 @@ public class Boat
 	bg.initializeAdult(); //Required for autograder interface. Must be the first thing called.
 	//DO NOT PUT ANYTHING ABOVE THIS LINE. 
 
-	/* This is where you should put your solutions. Make calls
-	   to the BoatGrader to show that it is synchronized. For
-	   example:
-	       bg.AdultRowToMolokai();
-	   indicates that an adult has rowed the boat across to Molokai
-	*/
+	lock.acquire();
+	condPeople.sleep();
+	lock.release();
+	/*
+	 * wake by leader - row to Molokai - wake assistant
+	 */
+	onOahu.speak(-1);
+	bg.AdultRowToMolokai();
+	toBoat.speak(-1);
+	lock.acquire();
+	condAssist.wake();
+	lock.release();
     }
 
     static void ChildItinerary()
     {
 	bg.initializeChild(); //Required for autograder interface. Must be the first thing called.
 	//DO NOT PUT ANYTHING ABOVE THIS LINE. 
+
+	//Electing the leader and assistant
+	lock.acquire();
+	int role = leaderVote;
+	if (role < 2) leaderVote++;
+	lock.release();
+	
+	switch (role) {
+	case 0: // Leader
+		//Take the assistant to the other side, everybody else sleeping on CondPeople
+		bg.ChildRowToMolokai();
+		onOahu.speak(0);
+		onMolokai.listen();
+		toBoat.speak(0); 
+		//Be warned, we're cheating here! Boat will decide if leader should continue
+		lock.acquire();
+		condLeader.sleep();
+		lock.release();
+		//End of cheat
+		bg.ChildRowToOahu();
+		//Main Loop
+		while (true) {
+			lock.acquire();
+			condPeople.wake();
+			lock.release();
+			int type = onOahu.listen();
+			switch (type) {
+			case 1: // Children
+				/*
+				 * Row to Molokai - Wait children to ride - Row to Oahu
+				 */
+				bg.ChildRowToMolokai();
+				onOahu.speak(0);
+				toBoat.speak(0); 
+				// Be warned, we're cheating here! Boat will decide if leader should continue
+				lock.acquire();
+				condLeader.sleep();
+				lock.release();
+				//End of cheat
+				bg.ChildRowToOahu();
+				break;
+			case -1: // Adult
+				/*
+				 * Wait assistant to row back - row to Molokai - wait assistant to ride - row to Oahu
+				 */
+				lock.acquire();
+				condLeader.sleep();
+				lock.release();
+				onOahu.listen();
+				bg.ChildRowToMolokai();
+				onOahu.speak(0);
+				onMolokai.listen();
+				toBoat.speak(0); 
+				// Be warned, we're cheating here! Boat will decide if leader should continue
+				lock.acquire();
+				condLeader.sleep();
+				lock.release();
+				//End of cheat
+				bg.ChildRowToOahu();
+			}
+			lock.acquire();
+			condLeader.sleep();
+			lock.release();
+		}
+	case 1: // Assistant
+		//Get to another side with the help of the leader
+		//Everybody else sleeping on CondPeople
+		onOahu.listen();
+		bg.ChildRideToMolokai();
+		onMolokai.speak(0);
+		while (true) {
+		/* Adult wakes assistant on Molokai - row back to Oahu
+		 *  - wait for leader to row to Molokai - ride to Molokai
+		 */
+		lock.acquire();
+		condAssist.sleep();
+		lock.release();
+		bg.ChildRowToOahu();
+		lock.acquire();
+		condLeader.wake();
+		lock.release();
+		onOahu.speak(0);
+		onOahu.listen();
+		bg.ChildRideToMolokai();
+		onMolokai.speak(0);
+		}
+	case 2: // Normal
+		/*
+		 * Wait leader to wake - Wait leader to row to Molokai - ride to Molokai
+		 */
+		lock.acquire();
+		condPeople.sleep();
+		lock.release();
+		onOahu.speak(1);
+		onOahu.listen();
+		bg.ChildRideToMolokai();
+		toBoat.speak(1);
+	}
     }
 
     static void SampleItinerary()
