@@ -15,7 +15,12 @@ public class Communicator {
      */
     public Communicator() {
     }
-
+    private Lock lock = new Lock();
+    private Condition condSpeak = new Condition(lock);
+    private Condition condListen = new Condition(lock);
+    private Condition condSpeak2 = new Condition(lock);
+    private Condition condListen2 = new Condition(lock);
+    private int waitingS = 0, waitingL = 0, waitingS2 = 0, waitingL2 = 0, lastWord = 0;
     /**
      * Wait for a thread to listen through this communicator, and then transfer
      * <i>word</i> to the listener.
@@ -27,6 +32,21 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	lock.acquire();
+    	while (waitingL == 0) {
+    		waitingS++;
+    		condSpeak.sleep();
+    		waitingS--;
+    	}
+    	condListen.wake();
+    	lastWord = word;
+    	while (waitingL2 == 0) {
+    		waitingS2++;
+    		condSpeak2.sleep();
+    		waitingS2--;
+    	}
+    	condListen2.wake();
+    	lock.release();
     }
 
     /**
@@ -36,6 +56,22 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	return 0;
+    	lock.acquire();
+    	while (waitingS == 0) {
+    		waitingL++;
+    		condListen.sleep();
+    		waitingL--;
+    	}
+    	condSpeak.wake();
+    	while (waitingS2 == 0) {
+    		waitingL2++;
+    		condListen2.sleep();
+    		waitingL2--;
+    	}
+    	condSpeak2.wake();
+    	int ret = lastWord;
+    	lastWord = 0;
+    	lock.release();
+    	return ret;
     }
 }
