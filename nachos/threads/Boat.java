@@ -6,6 +6,19 @@ public class Boat
 	
 	/**
 	 * Notes on the Implementation of Boat(Project 1 Task 6)
+	 * Our strategy is pretty simple. First there is a vote for children
+	 * and two children becomes leader and assistant. The rest people waiting
+	 * waits on a condition variable for leader to wake.
+	 * First, leader send assistant to the other side and return.
+	 * From now on, he wakes one people. If this is a children, he rows him
+	 * to Molokai and return.
+	 * If this is an adult, the adult goes to the other side, wakes assistant,
+	 * assistant rows back and they perform the first step to return to original
+	 * state.
+	 * 
+	 * The real challenge arises when there are no other people on Oahu. How
+	 * can the leader know this and go to Molokai without waiting indefinitely?
+	 * 
 	 * 
 	 * The description is conflicting with itself. It states:
 	 * "You cannot pass the number of threads created to the
@@ -17,16 +30,26 @@ public class Boat
 	 * Does this mean that we can bypass the first constraint
 	 * by storing the number of children in a shared variable?
 	 *  
+	 *  
 	 * Consider if this is not possible, then we're unable to determine
 	 * how many person are on the island of Oahu, nor if there are anyone
 	 * left on Oahu from the view of a people. This will inevitably
 	 * lead to a deadlock where one last children waiting another
 	 * when he can't figure out if there is still one more children.
 	 *  
+	 * There are several ways to get around this "evil last child" problem.
+	 * One is that we may assume we're using a Priority Scheduler. Then we
+	 * can reliably count peoples.
+	 * Also, we can assume that if there is only one thread running, when 
+	 * voluntarily yield, it'll yield to the boat process. Then, the last 
+	 * children yield before he return to Oahu, and if he is indeed the last
+	 * child, boat terminates him.
+	 *  
 	 * Another way is to use Alarm class. The last children on Oahu checks if someone
 	 * still there every second or so; The main boat process will terminate everyone
 	 * when there are no person left on Oahu. However, one may consider
-	 * this to be a busy-waiting behaviour and thus not allowed.
+	 * this to be a busy-waiting behavior, and it's largely inconsistent 
+	 * with the rest of the program.
 	 *  
 	 * Anyway, I find this problem quite strange.. Maybe I need some clarification
 	 * from the staff.
