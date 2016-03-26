@@ -254,6 +254,7 @@ public class PriorityScheduler extends Scheduler {
 				ThreadState cur = iter.next();
 				cur.update(this);
 			}
+            current = newMax;
 		}
 	}
 	
@@ -264,6 +265,7 @@ public class PriorityScheduler extends Scheduler {
 				ThreadState cur = iter.next();
 				cur.update(this);
 			}
+            current = newMax;
 		}
 	}
 	
