@@ -149,12 +149,13 @@ public class PriorityScheduler extends Scheduler {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    if (node.pr.isEmpty())
 	    return null;
-	    ThreadState pick = node.maxPrev();
+	    ThreadState pick = pickNextThread();
 	    //Remove any thread that is holding this. (?????)
 	    while (!node.ne.isEmpty()) {
 	    	ThreadState curr = node.ne.getFirst();
-	    	node.delPrev(curr);
+	    	curr.delPrev(node);
 	    }
+	    //This thread(pick) now owns the lock(node)
 	    pick.addPrev(node);
 	    return pick.thread;
 	}
@@ -169,12 +170,22 @@ public class PriorityScheduler extends Scheduler {
 	protected ThreadState pickNextThread() {
 	    if (node.pr.isEmpty())
 	    return null;
+	    if (this.transferPriority)
 	    return node.maxPrev();
+	    else {
+	    	ThreadState ret = node.pr.getFirst();
+			for (Iterator<ThreadState> iter = node.pr.iterator();iter.hasNext();) {
+				ThreadState cur = iter.next();
+				if (cur.priority > ret.priority) ret = cur;
+			}
+			return ret;
+	    }
 	}
 	
 	public void print() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)
+	    // Waiting for debug purposes
 	}
 
 	/**
@@ -311,7 +322,8 @@ public class PriorityScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#waitForAccess
 	 */
 	public void waitForAccess(PriorityQueue waitQueue) {
-	    
+	    ThreadState tar = waitQueue.node;
+	    tar.addPrev(this);
 	}
 
 	/**
@@ -325,7 +337,8 @@ public class PriorityScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#nextThread
 	 */
 	public void acquire(PriorityQueue waitQueue) {
-	    // implement me
+		ThreadState tar = waitQueue.node;
+		this.addPrev(tar);
 	}	
 
 	/** The thread with which this object is associated. */	   
