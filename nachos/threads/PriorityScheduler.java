@@ -5,6 +5,7 @@ import nachos.machine.*;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -126,8 +127,12 @@ public class PriorityScheduler extends Scheduler {
      * A <tt>ThreadQueue</tt> that sorts threads by priority.
      */
     protected class PriorityQueue extends ThreadQueue {
+    	
+    ThreadState node;
+    
 	PriorityQueue(boolean transferPriority) {
 	    this.transferPriority = transferPriority;
+	    node = new ThreadState(this);
 	}
 
 	public void waitForAccess(KThread thread) {
@@ -142,8 +147,16 @@ public class PriorityScheduler extends Scheduler {
 
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
-	    // implement me
+	    if (node.pr.isEmpty())
 	    return null;
+	    ThreadState pick = node.maxPrev();
+	    //Remove any thread that is holding this. (?????)
+	    while (!node.ne.isEmpty()) {
+	    	ThreadState curr = node.ne.getFirst();
+	    	node.delPrev(curr);
+	    }
+	    pick.addPrev(node);
+	    return pick.thread;
 	}
 
 	/**
@@ -154,8 +167,9 @@ public class PriorityScheduler extends Scheduler {
 	 *		return.
 	 */
 	protected ThreadState pickNextThread() {
-	    // implement me
+	    if (node.pr.isEmpty())
 	    return null;
+	    return node.maxPrev();
 	}
 	
 	public void print() {
@@ -169,7 +183,8 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	public boolean transferPriority;
     }
-
+    protected static int totalNodes = 0;
+    
     /**
      * The scheduling state of a thread. This should include the thread's
      * priority, its effective priority, any objects it owns, and the queue
@@ -177,7 +192,7 @@ public class PriorityScheduler extends Scheduler {
      *
      * @see	nachos.threads.KThread#schedulingState
      */
-    protected class ThreadState {
+    protected class ThreadState implements Comparable<ThreadState>{
 	/**
 	 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 	 * specified thread.
@@ -189,7 +204,69 @@ public class PriorityScheduler extends Scheduler {
 	    
 	    setPriority(priorityDefault);
 	}
-
+	public ThreadState(PriorityQueue queue) {
+		this.queue = queue;
+		
+		setPriority(priorityMinimum - 1);
+	}
+	int nodeId, current;
+	LinkedList<ThreadState> pr, ne;
+	public ThreadState(int x) {
+		priority = current = x;
+		nodeId = totalNodes++;
+		pr = new LinkedList<ThreadState> ();
+		ne = new LinkedList<ThreadState> ();
+	}
+	public int currentMax() {
+		int ret = priority;
+		if (!pr.isEmpty()) ret = Math.max(ret, maxPrev().current);
+		return ret;
+	}
+	public ThreadState maxPrev() {
+		ThreadState ret = pr.getFirst();
+		for (Iterator<ThreadState> iter = pr.iterator();iter.hasNext();) {
+			ThreadState cur = iter.next();
+			if (cur.current > ret.current) ret = cur;
+		}
+		return ret;
+	}
+	@Override
+	public int compareTo(ThreadState o) {
+		if (current != o.current)
+			return current - o.current;
+		return nodeId - o.nodeId;
+	}
+	public void update(ThreadState prev) {
+		int newMax = currentMax();
+		if (newMax != current) {
+			for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
+				ThreadState cur = iter.next();
+				cur.update(this);
+			}
+		}
+	}
+	
+	public void update_local() {
+		int newMax = currentMax();
+		if (newMax != current) {
+			for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
+				ThreadState cur = iter.next();
+				cur.update(this);
+			}
+		}
+	}
+	
+	public void addPrev(ThreadState node) {
+		pr.add(node);
+		node.ne.add(this);
+		update_local();
+	}
+	public void delPrev(ThreadState node) {
+		pr.remove(node);
+		node.ne.remove(this);
+		update_local();
+	}
+	
 	/**
 	 * Return the priority of the associated thread.
 	 *
@@ -205,8 +282,7 @@ public class PriorityScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
-	    // implement me
-	    return priority;
+	    return current;
 	}
 
 	/**
@@ -219,8 +295,7 @@ public class PriorityScheduler extends Scheduler {
 		return;
 	    
 	    this.priority = priority;
-	    
-	    // implement me
+	    update_local();
 	}
 
 	/**
@@ -236,7 +311,7 @@ public class PriorityScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#waitForAccess
 	 */
 	public void waitForAccess(PriorityQueue waitQueue) {
-	    // implement me
+	    
 	}
 
 	/**
@@ -255,6 +330,8 @@ public class PriorityScheduler extends Scheduler {
 
 	/** The thread with which this object is associated. */	   
 	protected KThread thread;
+	/** The queue associated with this node. */
+	protected PriorityQueue queue;
 	/** The priority of the associated thread. */
 	protected int priority;
     }
