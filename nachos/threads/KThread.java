@@ -282,12 +282,14 @@ public class KThread {
     public Condition joinCond = new Condition(joinLock);
     
     public void join() {
-	Lib.debug(dbgThread, "Joining to thread: " + toString());
+	boolean intStatus = Machine.interrupt().disable();
+    Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
 	joinLock.acquire();
 	if (status != statusFinished)
 		joinCond.sleep();
 	joinLock.release();
 	Lib.assertTrue(this != currentThread);
+	Machine.interrupt().restore(intStatus);
 
     }
 
@@ -415,9 +417,9 @@ public class KThread {
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
 	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new PingTest(0).run();
-	System.out.println(new Tests().testJoin()); }
+	//new KThread(new PingTest(1)).setName("forked thread").fork();
+	//new PingTest(0).run();
+	System.out.println(new Tests().testJoin(30)); }
     private static final char dbgThread = 't';
 
     /**
