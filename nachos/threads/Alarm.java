@@ -31,7 +31,7 @@ public class Alarm {
 			return 0;
 		}
 	}
-	PriorityQueue<AlarmItem> alarmList;
+	PriorityQueue<AlarmItem> alarmList = new PriorityQueue<AlarmItem> ();
 	
     public Alarm() {
 	Machine.timer().setInterruptHandler(new Runnable() {
