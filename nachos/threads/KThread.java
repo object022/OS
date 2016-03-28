@@ -1,7 +1,6 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -283,13 +282,13 @@ public class KThread {
     public Condition joinCond = new Condition(joinLock);
     
     public void join() {
-	Lib.debug(dbgThread, "Joining to thread: " + toString());
+	Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
 	joinLock.acquire();
 	if (status != statusFinished)
 		joinCond.sleep();
 	joinLock.release();
 	Lib.assertTrue(this != currentThread);
-
+	
     }
 
     /**
@@ -416,10 +415,9 @@ public class KThread {
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
 	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new PingTest(0).run();
-    }
-
+	//new KThread(new PingTest(1)).setName("forked thread").fork();
+	//new PingTest(0).run();
+	System.out.println(new Tests().testJoin(30)); }
     private static final char dbgThread = 't';
 
     /**

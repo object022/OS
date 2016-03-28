@@ -11,6 +11,10 @@ import java.util.Iterator;
  * to the end of a list. The next thread to receive access is always the first
  * thread in the list. This causes access to be given on a first-come
  * first-serve basis.
+ * 
+ * Modified:
+ * To help our tests to reach more cases for whatever reason, there is now a chaos trigger.
+ * When the trigger is on, the scheduler becomes a purely random scheduler.
  */
 public class RoundRobinScheduler extends Scheduler {
     /**
