@@ -23,8 +23,12 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
+<<<<<<< Updated upstream
 	this.conditionLock = conditionLock;
 	this.waitQueue = new LinkedList<KThread> ();
+=======
+        this.conditionLock = conditionLock;
+>>>>>>> Stashed changes
     }
 
     /**
@@ -34,13 +38,13 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-	boolean intStatus = Machine.interrupt().disable();
-	waitQueue.add(KThread.currentThread());
-	conditionLock.release();
-	KThread.sleep();
-	conditionLock.acquire();
-	Machine.interrupt().restore(intStatus);
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        boolean intStatus = Machine.interrupt().disable();
+        waitQueue.add(KThread.currentThread());
+        conditionLock.release();
+        KThread.sleep();
+        conditionLock.acquire();
+        Machine.interrupt().restore(intStatus);
     }
 
     /**
