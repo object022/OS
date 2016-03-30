@@ -28,24 +28,24 @@ public class Semaphore {
      * @param	initialValue	the initial value of this semaphore.
      */
     public Semaphore(int initialValue) {
-	value = initialValue;
+        value = initialValue;
     }
 
     /**
      * Atomically wait for this semaphore to become non-zero and decrement it.
      */
     public void P() {
-	boolean intStatus = Machine.interrupt().disable();
+        boolean intStatus = Machine.interrupt().disable();
 
-	if (value == 0) {
-	    waitQueue.waitForAccess(KThread.currentThread());
-	    KThread.sleep();
-	}
-	else {
-	    value--;
-	}
+        if (value == 0) {
+            waitQueue.waitForAccess(KThread.currentThread());
+            KThread.sleep();
+        }
+        else {
+            value--;
+        }
 
-	Machine.interrupt().restore(intStatus);
+        Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -53,34 +53,34 @@ public class Semaphore {
      * sleeping on this semaphore.
      */
     public void V() {
-	boolean intStatus = Machine.interrupt().disable();
-
-	KThread thread = waitQueue.nextThread();
-	if (thread != null) {
-	    thread.ready();
-	}
-	else {
-	    value++;
-	}
+        boolean intStatus = Machine.interrupt().disable();
+        
+        KThread thread = waitQueue.nextThread();
+        if (thread != null) {
+            thread.ready();
+        }
+        else {
+            value++;
+        }
 	
-	Machine.interrupt().restore(intStatus);
+        Machine.interrupt().restore(intStatus);
     }
 
     private static class PingTest implements Runnable {
-	PingTest(Semaphore ping, Semaphore pong) {
-	    this.ping = ping;
-	    this.pong = pong;
-	}
+        PingTest(Semaphore ping, Semaphore pong) {
+            this.ping = ping;
+            this.pong = pong;
+        }
 	
-	public void run() {
-	    for (int i=0; i<10; i++) {
-		ping.P();
-		pong.V();
-	    }
-	}
+        public void run() {
+            for (int i=0; i<10; i++) {
+                ping.P();
+                pong.V();
+            }
+        }
 
-	private Semaphore ping;
-	private Semaphore pong;
+        private Semaphore ping;
+        private Semaphore pong;
     }
 
     /**

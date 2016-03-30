@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
 
 /**
@@ -8,6 +10,12 @@ import nachos.machine.*;
  * and multiple threads can be waiting to <i>listen</i>. But there should never
  * be a time when both a speaker and a listener are waiting, because the two
  * threads can be paired off at this point.
+ * 
+ * Implementation Notes:
+ * We use a simple one-round shake-hand protocol. Before the protocol starts,
+ * speaker push his word onto a queue (this is to deal with the chaos when
+ * there are multiple pairs), and after the protocol, listener grab the word from the queue.
+ * 
  */
 public class Communicator {
     /**
@@ -15,7 +23,11 @@ public class Communicator {
      */
     public Communicator() {
     }
-
+    private Lock lock = new Lock();
+    private Condition condSpeak = new Condition(lock);
+    private Condition condListen = new Condition(lock);
+    private int waitingS = 0, waitingL = 0;
+    private LinkedList<Integer> messages = new LinkedList<Integer> ();
     /**
      * Wait for a thread to listen through this communicator, and then transfer
      * <i>word</i> to the listener.
@@ -27,6 +39,15 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	lock.acquire();
+    	messages.add(word);
+    	while (waitingL == 0) {
+    		waitingS++;
+    		condSpeak.sleep();
+    		waitingS--;
+    	}
+    	condListen.wake();
+    	lock.release();
     }
 
     /**
@@ -36,6 +57,15 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	return 0;
+    	lock.acquire();
+    	while (waitingS == 0) {
+    		waitingL++;
+    		condListen.sleep();
+    		waitingL--;
+    	}
+    	condSpeak.wake();
+    	int ret = messages.removeFirst();
+    	lock.release();
+    	return ret;
     }
 }

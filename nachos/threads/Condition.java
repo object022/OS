@@ -59,9 +59,8 @@ public class Condition {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition(Lock conditionLock) {
-	this.conditionLock = conditionLock;
-
-	waitQueue = new LinkedList<Semaphore>();
+        this.conditionLock = conditionLock;
+        waitQueue = new LinkedList<Semaphore>();
     }
 
     /**
@@ -73,18 +72,16 @@ public class Condition {
      * <p>
      * This implementation uses semaphores to implement this, by allocating a
      * semaphore for each waiting thread. The waker will <tt>V()</tt> this
-     * semaphore, so thre is no chance the sleeper will miss the wake-up, even
+     * semaphore, so thre is no chance the sleeper will miss the wake-up,a even
      * though the lock is released before caling <tt>P()</tt>.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	Semaphore waiter = new Semaphore(0);
-	waitQueue.add(waiter);
-
-	conditionLock.release();
-	waiter.P();
-	conditionLock.acquire();	
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        Semaphore waiter = new Semaphore(0);
+        waitQueue.add(waiter);
+        conditionLock.release();
+        waiter.P();
+        conditionLock.acquire();
     }
 
     /**
@@ -92,10 +89,9 @@ public class Condition {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	if (!waitQueue.isEmpty())
-	    ((Semaphore) waitQueue.removeFirst()).V();
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        if (!waitQueue.isEmpty())
+            ((Semaphore) waitQueue.removeFirst()).V();
     }
 
     /**
@@ -103,10 +99,13 @@ public class Condition {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	while (!waitQueue.isEmpty())
-	    wake();
+        Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        while (!waitQueue.isEmpty())
+            wake();
+    }
+    
+    public int queueSize() {
+        return waitQueue.size();
     }
 
     private Lock conditionLock;
