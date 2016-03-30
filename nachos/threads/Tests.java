@@ -15,7 +15,7 @@ public class Tests {
 	 * Expected concurrency, so use synchronized keyword in this file.
 	 * As it won't run in the final test, even getting grep'd is fine.
 	 */
-	public List<Integer> msg = Collections.synchronizedList(new LinkedList<Integer> ());
+	public SynchList msg = new SynchList();
 	/**
 	 * Tester for KThread.join().
 	 * Generates 2*n threads, n of them joining another n threads
@@ -30,9 +30,7 @@ public class Tests {
 			tlist.add(new KThread(new Runnable() {
 				@Override
 				public void run() {
-					synchronized(msg) {
 					msg.add(thisId + 1);
-					}
 				}
 			}).setName("Starter #" + Integer.toString(thisId)));
 		}
@@ -43,9 +41,7 @@ public class Tests {
 				@Override
 				public void run() {
 					toJoin.join();
-					synchronized(msg) {
 					msg.add(-thisId - 1);}
-				}
 			}).setName("Joiner #" + Integer.toString(thisId));
 			tlist.add(curThread);
 			joinList.add(curThread);
@@ -58,16 +54,18 @@ public class Tests {
 		}
 		for (int i = 0; i < n; i++)
 			joinList.get(i).join();
-		synchronized(msg) {
-			int len = msg.size();
-			boolean[] used = new boolean[n + 1];
-			for (int i = 0; i < len; i++) {
-				int num = msg.get(i);
+			
+		boolean[] used = new boolean[n + 1];
+		int num = 0;
+		for (int i = 0; i < 2 * n; i++) {
+				Object ret = msg.removeFirstNoWait();
+				Lib.assertTrue(ret != null);
+				num = (Integer) ret;
 				if (num > 0)
 					if (used[num]) return "Duplicate Entry"; else used[num] = true;
 				if (num < 0)
 					if (!used[-num]) return "Join before thread stops"; else used[-num] = false;
-			}
+			
 		}
 		return "KThread.Join Succeed N = " + Integer.toString(n);
 	}
@@ -118,13 +116,13 @@ public class Tests {
 		for (int i = 0; i < n; i++)
 			joinList.get(i).join();
 		int prefix = 0;
-		synchronized(msg) {
+		/*synchronized(msg) {
 			int len = msg.size();
 			for (int i = 0; i < len; i++) {
 				prefix += msg.get(i);
 				if (prefix < 0) return "Too many threads awoken from wake calls";
 			}
-		}
+		}*/
 		return "Condition Variable Test 1 Succeed N = " + Integer.toString(n)
 			+ " # of threads not woke up = " + prefix;
 	}
