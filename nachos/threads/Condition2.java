@@ -68,7 +68,6 @@ public class Condition2 {
     public static void selfTest() {
     	System.out.println(new Tests().testCond1(10));
     	System.out.println(new Tests().testCond2(10));
-    	System.out.println(new Tests().testCond3());
     }
     private Lock conditionLock;
     private LinkedList<KThread> waitQueue;

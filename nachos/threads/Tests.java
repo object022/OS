@@ -12,8 +12,7 @@ import nachos.threads.KThread;
 public class Tests {
 	/**
 	 * This message list is used among all test cases.
-	 * Expected concurrency, so use synchronized keyword in this file.
-	 * As it won't run in the final test, even getting grep'd is fine.
+	 * Expected concurrency - Use SynchList primitive for this
 	 */
 	public SynchList msg = new SynchList();
 	/**
@@ -60,7 +59,6 @@ public class Tests {
 		for (int i = 0; i < 2 * n; i++) {
 				Object ret = msg.removeFirstNoWait();
 				Lib.assertTrue(ret != null);
-				System.out.println(ret);
 				num = (Integer) ret;
 				if (num > 0)
 					if (used[num]) return "Duplicate Entry"; else used[num] = true;
@@ -124,22 +122,18 @@ public class Tests {
 			+ " # of threads not woke up = " + prefix;
 	}
 	/**
-	 * Testing the wait() and notify() for Condition2, Part 2.
-	 * In this part we generate a lot of calls in the following pattern:
-	 * Condition[i].sleep()
-	 * Condition[i+1].wake()
-	 * All processes should wake up in ascending order under proper synch conditions.
-	 * This is currently scrapped; Wait until we make sure WaitUntil() works.
-	 */
+	 * Testing the wait() and notifyAll() for Condition2.
+	 * The original second part to test notify() is now moved to Communicator.
+	 * N threads are forked sharing a common variable. They wait each other until the 
+	 * last one arrives, then all are awoken up to finish the process.
+	 **/
+	Integer counter = 0; // For testCond2 only
 	public String testCond2(int n) {
-		//return "Conditonal Variable Test 2 currently disabled";
-		//TBD: if the RRS is in Chaos, this auto returns
-		//if () return "(cond2) No test under this condition";
-		return "Cond2 test currently disabled";
-		/*
 		LinkedList<Lock> locks = new LinkedList<Lock> ();
 		LinkedList<Condition2> conds = new LinkedList<Condition2> ();
 		LinkedList<KThread> threads = new LinkedList<KThread> ();
+		Lock count_lock = new Lock();
+		Condition2 count_cond = new Condition2(count_lock);
 		for (int i = 0; i < n; i++) {
 			locks.add(new Lock());
 			conds.add(new Condition2(locks.get(i)));
@@ -147,20 +141,14 @@ public class Tests {
 			threads.add(new KThread(new Runnable() {
 				@Override
 				public void run() {
-					if (thisId != 0) {
-						int x = thisId - 1;
-						ThreadedKernel.alarm.waitUntil(10000 * x);
-						locks.get(x).acquire();
-						conds.get(x).sleep();
-						locks.get(x).release();
-					}
-					int y = thisId;
-					locks.get(y).acquire();
-					conds.get(y).wake();
-					synchronized(msg) {
-						msg.add(thisId);
-					}
-					locks.get(y).release();
+						count_lock.acquire();
+						msg.add(counter);
+						counter++;
+						if (counter == n) count_cond.wakeAll();
+						else count_cond.sleep();
+						msg.add(counter);
+						counter--;
+						count_lock.release();
 				}
 			}).setName("{cond2) Thread #" + Integer.toString(i)));
 		}
@@ -168,27 +156,17 @@ public class Tests {
 			Lib.assertTrue(threads.get(i).getTCB() != null);
 			threads.get(i).fork();
 		}
-		//locks.get(n-1).acquire();
-		//conds.get(n-1).sleep();
-		//locks.get(n-1).release();
-		ThreadedKernel.alarm.waitUntil(100000);
-		synchronized(msg) {
-			//if (msg.size() != n) return "Wrong message queue size";
-			for (int i = 0; i < msg.size(); i++)
-				if (msg.get(i) != i) return "Wrong order at " + Integer.toString(i);
-			return "Conditional Variable Test 2 passed, Returned Message size = " + Integer.toString(msg.size())
-			+ ", N = " + Integer.toString(n);
-		}
-		*/
+		for (int i = 0; i < n; i++) threads.get(i).join();
+		for (int i = 0; i < n; i++)
+			if ((Integer) msg.removeFirstNoWait() != i) 
+				return "Wrong counting order at " + Integer.toString(i);
+		for (int i = 0; i < n; i++)
+			if ((Integer) msg.removeFirstNoWait() != n - i) 
+				return "Wrong joining order at " + Integer.toString(i);
+
+		return "Conditional Variable Test 2 passed, N = " + Integer.toString(n);
 	}
-	/**
-	 * Testing the wait() and notifyAll() for Condition2.
-	 * Just a small check as notifyAll() is basically a notify() repeated many times.
-	 * We generate a lot of calls to wait() and some call to notifyAll().
-	 */
-	public String testCond3() {
-		return "Conditional Variable Test 3 is not implemented yet.";
-	}
+
 	/**
 	 * Testing the Alarm class.
 	 * We generate a lot of calls to waitUntil() and see if the condition specified in the 
@@ -200,10 +178,45 @@ public class Tests {
 		return null;
 	}
 	/**
+	 * Testing the Conditon2 synch as well as the Communicator class.
+	 * Generate N speakers and listeners and they should form a queue.
+	 */
+	public String testComm1(int n) {
+		LinkedList<Communicator> comm = new LinkedList<Communicator> ();
+		LinkedList<KThread> tlist = new LinkedList<KThread> ();
+		for (int i = 0; i < n; i++) comm.add(new Communicator());
+		for (int i = 0; i < n; i++) {
+			final int thisId = i;
+			tlist.add(new KThread(new Runnable() {
+				@Override
+				public void run() {
+					if (thisId != 0) {
+						int res = comm.get(thisId - 1).listen();
+						System.out.println("Listening " + res);
+						if (res != thisId - 1) msg.add(-thisId-1); 
+					}
+					System.out.println("Speaking " + thisId);
+					comm.get(thisId).speak(thisId);
+					msg.add(thisId);
+				}
+			}).setName("(comm1) Person #" + Integer.toString(thisId)));
+		}
+		Collections.shuffle(tlist);
+		for (int i = 0; i < n; i++) tlist.get(i).fork();
+		comm.get(n-1).listen();
+		for (int i = 0; i < n; i++) {
+			Object o = msg.removeFirstNoWait();
+			if (o == null) return "Queue is too small";
+			if ((Integer) o < 0) return "Get incorrect word at " + Integer.toString((Integer) o - 1);
+			if ((Integer) o != i) return "Incorrect order at " +  Integer.toString((Integer) o);
+		}
+		return "Communicator Test 1 passed, N = " + Integer.toString(n);
+	}
+	/**
 	 * Testing the Communicator class.
 	 * Try generating listens first then speaks; then do it another way.
 	 */
-	public String testComm() {
+	public String testComm2() {
 		return null;
 	}
 	/**

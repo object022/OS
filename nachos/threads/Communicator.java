@@ -68,4 +68,7 @@ public class Communicator {
     	lock.release();
     	return ret;
     }
+    public static void selfTest() {
+    	System.out.println(new Tests().testComm1(40));
+    }
 }
