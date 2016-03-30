@@ -36,7 +36,7 @@ public class Tests {
 		}
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
-			KThread toJoin = tlist.get(thisId);
+			final KThread toJoin = tlist.get(thisId);
 			KThread curThread = new KThread(new Runnable() {
 				@Override
 				public void run() {
