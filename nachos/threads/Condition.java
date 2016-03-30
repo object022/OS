@@ -89,6 +89,8 @@ public class Condition {
      * current thread must hold the associated lock.
      */
     public void wake() {
+	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+
 	if (!waitQueue.isEmpty())
 	    ((Semaphore) waitQueue.removeFirst()).V();
     }
@@ -98,6 +100,7 @@ public class Condition {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
+	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
 	while (!waitQueue.isEmpty())
 	    wake();
