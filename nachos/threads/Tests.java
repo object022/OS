@@ -24,6 +24,7 @@ public class Tests {
 	 */
 	public String testJoin(final int n) {
 		List<KThread> tlist = new LinkedList<KThread> ();
+		List<KThread> joinList = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
 			tlist.add(new KThread(new Runnable() {
@@ -38,21 +39,25 @@ public class Tests {
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
 			KThread toJoin = tlist.get(thisId);
-			tlist.add(new KThread(new Runnable() {
+			KThread curThread = new KThread(new Runnable() {
 				@Override
 				public void run() {
 					toJoin.join();
 					synchronized(msg) {
 					msg.add(-thisId - 1);}
 				}
-			}).setName("Joiner #" + Integer.toString(thisId)));
+			}).setName("Joiner #" + Integer.toString(thisId));
+			tlist.add(curThread);
+			joinList.add(curThread);
 		}
 		
 		Collections.shuffle(tlist);
-		for (int i = 0; i < 2 * n; i++) 
+		for (int i = 0; i < 2 * n; i++) {
+			Lib.assertTrue(tlist.get(i).getTCB() != null);
 			tlist.get(i).fork();
-		for (int i = 0; i < 2 * n; i++)
-			tlist.get(i).join();
+		}
+		for (int i = 0; i < n; i++)
+			joinList.get(i).join();
 		synchronized(msg) {
 			int len = msg.size();
 			boolean[] used = new boolean[n + 1];
@@ -106,8 +111,10 @@ public class Tests {
 			}).setName("(cond1) waker #" + Integer.toString(thisId)));
 		}
 		Collections.shuffle(tlist);
-		for (int i = 0; i < 2 * n; i++) 
+		for (int i = 0; i < 2 * n; i++) {
+			Lib.assertTrue(tlist.get(i).getTCB() != null);
 			tlist.get(i).fork();
+		}
 		for (int i = 0; i < n; i++)
 			joinList.get(i).join();
 		int prefix = 0;
@@ -130,9 +137,10 @@ public class Tests {
 	 * This is currently scrapped; Wait until we make sure WaitUntil() works.
 	 */
 	public String testCond2(int n) {
-		return "Conditonal Variable Test 2 currently disabled";
+		//return "Conditonal Variable Test 2 currently disabled";
 		//TBD: if the RRS is in Chaos, this auto returns
 		//if () return "(cond2) No test under this condition";
+		return "Cond2 test currently disabled";
 		/*
 		LinkedList<Lock> locks = new LinkedList<Lock> ();
 		LinkedList<Condition2> conds = new LinkedList<Condition2> ();
@@ -146,6 +154,7 @@ public class Tests {
 				public void run() {
 					if (thisId != 0) {
 						int x = thisId - 1;
+						ThreadedKernel.alarm.waitUntil(10000 * x);
 						locks.get(x).acquire();
 						conds.get(x).sleep();
 						locks.get(x).release();
@@ -160,16 +169,21 @@ public class Tests {
 				}
 			}).setName("{cond2) Thread #" + Integer.toString(i)));
 		}
-		for (int i = n-1; i > 0; i--) threads.get(i).fork();
-		locks.get(n-1).acquire();
-		conds.get(n-1).sleep();
-		locks.get(n-1).release();
-		synchronized(msg) {
-			if (msg.size() != n) return "Wrong message queue size";
-			for (int i = 0; i < n; i++)
-				if (msg.get(i) != i) return "Wrong order at " + Integer.toString(i);
+		for (int i = 0; i < n; i++) {
+			Lib.assertTrue(threads.get(i).getTCB() != null);
+			threads.get(i).fork();
 		}
-		return "Conditional Variable Test 2 passed, N = " + Integer.toString(n);
+		//locks.get(n-1).acquire();
+		//conds.get(n-1).sleep();
+		//locks.get(n-1).release();
+		ThreadedKernel.alarm.waitUntil(100000);
+		synchronized(msg) {
+			//if (msg.size() != n) return "Wrong message queue size";
+			for (int i = 0; i < msg.size(); i++)
+				if (msg.get(i) != i) return "Wrong order at " + Integer.toString(i);
+			return "Conditional Variable Test 2 passed, Returned Message size = " + Integer.toString(msg.size())
+			+ ", N = " + Integer.toString(n);
+		}
 		*/
 	}
 	/**

@@ -165,6 +165,7 @@ public class AutoGrader {
      * @param	idleThread	the idle thread.
      */
     public void setIdleThread(KThread idleThread) {
+    	
     }
 
     /**

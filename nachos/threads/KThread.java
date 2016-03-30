@@ -55,6 +55,7 @@ public class KThread {
 	    restoreState();
 
 	    createIdleThread();
+	    
 	}
     }
 
@@ -112,7 +113,13 @@ public class KThread {
     public String toString() {
 	return (name + " (#" + id + ")");
     }
-
+    
+    /**
+     * Testing against the null TCB - only for debugging purposes
+     */
+    public TCB getTCB() {
+    	return tcb;
+    }
     /**
      * Deterministically and consistently compare this thread to another
      * thread.
@@ -287,6 +294,7 @@ public class KThread {
 	if (status != statusFinished)
 		joinCond.sleep();
 	joinLock.release();
+	Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
 	Lib.assertTrue(this != currentThread);
 	
     }
@@ -357,6 +365,10 @@ public class KThread {
 
 	currentThread = this;
 
+	if (tcb == null) {
+		System.out.println(this);
+	}
+	
 	tcb.contextSwitch();
 
 	currentThread.restoreState();
@@ -417,7 +429,7 @@ public class KThread {
 	
 	//new KThread(new PingTest(1)).setName("forked thread").fork();
 	//new PingTest(0).run();
-	System.out.println(new Tests().testJoin(30)); }
+	System.out.println(new Tests().testJoin(5)); }
     private static final char dbgThread = 't';
 
     /**
