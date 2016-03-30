@@ -276,12 +276,22 @@ public class KThread {
     public Condition joinCond = new Condition(joinLock);
     
     public void join() {
+<<<<<<< Updated upstream
 	Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
 	joinLock.acquire();
 	if (status != statusFinished)
 		joinCond.sleep();
 	joinLock.release();
 	Lib.assertTrue(this != currentThread);
+	
+=======
+        Lib.debug(dbgThread, "Joining to thread: " + toString());
+        Lib.assertTrue(this != currentThread);
+        joinLock.acquire();
+        if (status != statusFinished)
+            joinCond.sleep();
+        joinLock.release();
+>>>>>>> Stashed changes
     }
 
     /**
