@@ -23,8 +23,8 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	this.conditionLock = conditionLock;
-	this.waitQueue = new LinkedList<KThread> ();
+        this.conditionLock = conditionLock;
+        this.waitQueue = new LinkedList<KThread> ();
     }
 
     /**
