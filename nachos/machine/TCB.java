@@ -38,8 +38,8 @@ public final class TCB {
      *				machine.
      */
     public static void givePrivilege(Privilege privilege) {
-        TCB.privilege = privilege;
-        privilege.tcb = new TCBPrivilege();
+	TCB.privilege = privilege;
+	privilege.tcb = new TCBPrivilege();
     }
     
     /**
@@ -61,41 +61,41 @@ public final class TCB {
 	 * use javaThread as a reliable indicator of whether or not start() has
 	 * already been invoked.
 	 */
-        Lib.assertTrue(javaThread == null && !done);
+	Lib.assertTrue(javaThread == null && !done);
 
 	/* Make sure there aren't too many running TCBs already. This
 	 * limitation exists in an effort to prevent wild thread usage.
 	 */
-        Lib.assertTrue(runningThreads.size() < maxThreads);
+	Lib.assertTrue(runningThreads.size() < maxThreads);
 
-        isFirstTCB = (currentTCB == null);
+	isFirstTCB = (currentTCB == null);
 
 	/* Probably unnecessary sanity check: if this is not the first TCB, we
 	 * make sure that the current thread is bound to the current TCB. This
 	 * check can only fail if non-Nachos threads invoke start().
 	 */
-        if (!isFirstTCB)
-            Lib.assertTrue(currentTCB.javaThread == Thread.currentThread());
+	if (!isFirstTCB)
+	    Lib.assertTrue(currentTCB.javaThread == Thread.currentThread());
 
 	/* At this point all checks are complete, so we go ahead and start the
 	 * TCB. Whether or not this is the first TCB, it gets added to
 	 * runningThreads, and we save the target closure.
 	 */
-        runningThreads.add(this);
+	runningThreads.add(this);
 
-        this.target = target;
+	this.target = target;
 
-        if (!isFirstTCB) {
+	if (!isFirstTCB) {
 	    /* If this is not the first TCB, we have to make a new Java thread
 	     * to run it. Creating Java threads is a privileged operation.
 	     */
-            tcbTarget = new Runnable() {
-                public void run() { threadroot(); }
-            };
+	    tcbTarget = new Runnable() {
+		    public void run() { threadroot(); }
+		};
 
-            privilege.doPrivileged(new Runnable() {
-                public void run() { javaThread = new Thread(tcbTarget); }
-            });
+	    privilege.doPrivileged(new Runnable() {
+		    public void run() { javaThread = new Thread(tcbTarget); }
+		});
 
 	    /* The Java thread hasn't yet started, but we need to get it
 	     * blocking in yield(). We do this by temporarily turning off the
@@ -103,27 +103,27 @@ public final class TCB {
 	     * to wake us up from threadroot(). Once the new TCB wakes us up,
 	     * it's safe to context switch to the new TCB.
 	     */
-            currentTCB.running = false;
+	    currentTCB.running = false;
 	    
-            this.javaThread.start();
-            currentTCB.waitForInterrupt();
-        }
-        else {
+	    this.javaThread.start();
+	    currentTCB.waitForInterrupt();
+	}
+	else {
 	    /* This is the first TCB, so we don't need to make a new Java
 	     * thread to run it; we just steal the current Java thread.
 	     */
-            javaThread = Thread.currentThread();
+	    javaThread = Thread.currentThread();
 
 	    /* All we have to do now is invoke threadroot() directly. */
-            threadroot();
-        }
+	    threadroot();
+	}
     }
 
     /**
      * Return the TCB of the currently running thread.
      */
     public static TCB currentTCB() {
-        return currentTCB;
+	return currentTCB;
     }
 
     /**
@@ -136,15 +136,15 @@ public final class TCB {
 	 * thread is bound to the current TCB. This check can only fail if
 	 * non-Nachos threads invoke start().
 	 */
-        Lib.assertTrue(currentTCB.javaThread == Thread.currentThread());
+	Lib.assertTrue(currentTCB.javaThread == Thread.currentThread());
 
 	// make sure AutoGrader.runningThread() called associateThread()
-        Lib.assertTrue(currentTCB.associated);
-        currentTCB.associated = false;
+	Lib.assertTrue(currentTCB.associated);
+	currentTCB.associated = false;
 	
 	// can't switch from a TCB to itself
-        if (this == currentTCB)
-            return;
+	if (this == currentTCB)
+	    return;
 
 	/* There are some synchronization concerns here. As soon as we wake up
 	 * the next thread, we cannot assume anything about static variables,
@@ -155,11 +155,11 @@ public final class TCB {
 	 * block).
 	 */
 
-        TCB previous = currentTCB;
-        previous.running = false;
+	TCB previous = currentTCB;
+	previous.running = false;
 	
-        this.interrupt();
-        previous.yield();
+	this.interrupt();
+	previous.yield();
     }
     
     /**
@@ -169,31 +169,31 @@ public final class TCB {
      */
     public void destroy() {
 	// make sure the current TCB is correct
-        Lib.assertTrue(currentTCB != null &&
+	Lib.assertTrue(currentTCB != null &&
 		   currentTCB.javaThread == Thread.currentThread());
 	// can't destroy current thread
-        Lib.assertTrue(this != currentTCB);
+	Lib.assertTrue(this != currentTCB);
 	// thread must have started but not be destroyed yet
-        Lib.assertTrue(javaThread != null && !done);
+	Lib.assertTrue(javaThread != null && !done);
 
 	// ensure AutoGrader.finishingCurrentThread() called authorizeDestroy()
-        Lib.assertTrue(nachosThread == toBeDestroyed);
-        toBeDestroyed = null;
+	Lib.assertTrue(nachosThread == toBeDestroyed);
+	toBeDestroyed = null;
 
-        this.done = true;
-        currentTCB.running = false;
+	this.done = true;
+	currentTCB.running = false;
 
-        this.interrupt();
-        currentTCB.waitForInterrupt();
+	this.interrupt();
+	currentTCB.waitForInterrupt();
 	
-        this.javaThread = null;
+	this.javaThread = null;
     }
 
     /**
      * Destroy all TCBs and exit Nachos. Same as <tt>Machine.terminate()</tt>.
      */
     public static void die() {
-        privilege.exit(0);
+	privilege.exit(0);
     }
 
     /**
@@ -203,15 +203,15 @@ public final class TCB {
      * @return	<tt>true</tt> if the current JVM thread is a Nachos thread.
      */
     public static boolean isNachosThread() {
-        return (currentTCB != null &&
-                Thread.currentThread() == currentTCB.javaThread);
+	return (currentTCB != null &&
+		Thread.currentThread() == currentTCB.javaThread);
     }
 
     private void threadroot() {
 	// this should be running the current thread
-        Lib.assertTrue(javaThread == Thread.currentThread());
+	Lib.assertTrue(javaThread == Thread.currentThread());
 
-        if (!isFirstTCB) {
+	if (!isFirstTCB) {
 	    /* start() is waiting for us to wake it up, signalling that it's OK
 	     * to context switch to us. We leave the running flag false so that
 	     * we'll still run if a context switch happens before we go to
@@ -219,45 +219,45 @@ public final class TCB {
 	     * wait to get woken up by contextSwitch() or destroy().
 	     */
 	    
-            currentTCB.interrupt();
-            this.yield();
-        }
-        else {
+	    currentTCB.interrupt();
+	    this.yield();
+	}
+	else {
 	    /* start() called us directly, so we just need to initialize
 	     * a couple things.
 	     */
 	    
-            currentTCB = this;
-            running = true;
-        }
+	    currentTCB = this;
+	    running = true;
+	}
 
-        try {
-            target.run();
+	try {
+	    target.run();
 
 	    // no way out of here without going throw one of the catch blocks
-            Lib.assertNotReached();
-        }
-        catch (ThreadDeath e) {
-            // make sure this TCB is being destroyed properly
-            if (!done) {
-                System.out.print("\nTCB terminated improperly!\n");
-                privilege.exit(1);
-            }
+	    Lib.assertNotReached();
+	}
+	catch (ThreadDeath e) {
+	    // make sure this TCB is being destroyed properly
+	    if (!done) {
+		System.out.print("\nTCB terminated improperly!\n");
+		privilege.exit(1);
+	    }
 
-            runningThreads.removeElement(this);
-            if (runningThreads.isEmpty())
-                privilege.exit(0);
-        }
-        catch (Throwable e) {
-            System.out.print("\n");
-            e.printStackTrace();
+	    runningThreads.removeElement(this);
+	    if (runningThreads.isEmpty())
+		privilege.exit(0);
+	}
+	catch (Throwable e) {
+	    System.out.print("\n");
+	    e.printStackTrace();
 
-            runningThreads.removeElement(this);
-            if (runningThreads.isEmpty())
-                privilege.exit(1);
-            else
-                die();
-        }
+	    runningThreads.removeElement(this);
+	    if (runningThreads.isEmpty())
+		privilege.exit(1);
+	    else
+		die();
+	}
     }
 
     /**
@@ -269,14 +269,14 @@ public final class TCB {
      * this TCB and return.
      */
     private void yield() {
-        waitForInterrupt();
+	waitForInterrupt();
 	
-        if (done) {
-            currentTCB.interrupt();
-            throw new ThreadDeath();
-        }
+	if (done) {
+	    currentTCB.interrupt();
+	    throw new ThreadDeath();
+	}
 
-        currentTCB = this;
+	currentTCB = this;
     }
 
     /**
@@ -288,10 +288,10 @@ public final class TCB {
      * is updated by <tt>contextSwitch()</tt> before we get called.
      */
     private synchronized void waitForInterrupt() {
-        while (!running) {
-            try { wait(); }
-            catch (InterruptedException e) { }
-        }
+	while (!running) {
+	    try { wait(); }
+	    catch (InterruptedException e) { }
+	}
     }
 
     /**
@@ -301,29 +301,29 @@ public final class TCB {
      * TCB.
      */
     private synchronized void interrupt() {
-        running = true;
-        notify();
+	running = true;
+	notify();
     }
 
     private void associateThread(KThread thread) {
 	// make sure AutoGrader.runningThread() gets called only once per
 	// context switch
-        Lib.assertTrue(!associated);
-        associated = true;
+	Lib.assertTrue(!associated);
+	associated = true;
 
-        Lib.assertTrue(thread != null);
+	Lib.assertTrue(thread != null);
 
-        if (nachosThread != null)
-            Lib.assertTrue(thread == nachosThread);
-        else
-            nachosThread = thread;
+	if (nachosThread != null)
+	    Lib.assertTrue(thread == nachosThread);
+	else
+	    nachosThread = thread;
     }
 
     private static void authorizeDestroy(KThread thread) {
 	// make sure AutoGrader.finishingThread() gets called only once per
 	// destroy
-        Lib.assertTrue(toBeDestroyed == null);
-        toBeDestroyed = thread;
+	Lib.assertTrue(toBeDestroyed == null);
+	toBeDestroyed = thread;
     }
 
     /**

@@ -73,10 +73,10 @@ public class Alarm {
      * @see	nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-        long wakeTime = Machine.timer().getTime() + x;
-        boolean intStatus = Machine.interrupt().disable();
-        alarmList.add(new AlarmItem(KThread.currentThread(), wakeTime));
-        KThread.sleep();
-        Machine.interrupt().restore(intStatus);
+	long wakeTime = Machine.timer().getTime() + x;
+	boolean intStatus = Machine.interrupt().disable();
+	alarmList.add(new AlarmItem(KThread.currentThread(), wakeTime));
+	KThread.sleep();
+	Machine.interrupt().restore(intStatus);
 	}
 }
