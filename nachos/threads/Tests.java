@@ -60,6 +60,7 @@ public class Tests {
 		for (int i = 0; i < 2 * n; i++) {
 				Object ret = msg.removeFirstNoWait();
 				Lib.assertTrue(ret != null);
+				System.out.println(ret);
 				num = (Integer) ret;
 				if (num > 0)
 					if (used[num]) return "Duplicate Entry"; else used[num] = true;
@@ -88,9 +89,7 @@ public class Tests {
 				public void run() {
 					lock.acquire();
 					cond.wake();
-					synchronized(msg) {
-						msg.add(1);
-					}
+					msg.add(1);
 					lock.release();
 				}
 			}).setName("(cond1) sleeper #" + Integer.toString(thisId));
@@ -101,9 +100,7 @@ public class Tests {
 				public void run() {
 					lock.acquire();
 					cond.sleep();
-					synchronized(msg) {
-						msg.add(-1);
-					}
+					msg.add(-1);
 					lock.release();
 				}
 			}).setName("(cond1) waker #" + Integer.toString(thisId)));
@@ -116,13 +113,13 @@ public class Tests {
 		for (int i = 0; i < n; i++)
 			joinList.get(i).join();
 		int prefix = 0;
-		/*synchronized(msg) {
-			int len = msg.size();
-			for (int i = 0; i < len; i++) {
-				prefix += msg.get(i);
+			while (true) {
+				Object o = msg.removeFirstNoWait();
+				if (o == null) break;
+				prefix += (Integer) o;
 				if (prefix < 0) return "Too many threads awoken from wake calls";
 			}
-		}*/
+		
 		return "Condition Variable Test 1 Succeed N = " + Integer.toString(n)
 			+ " # of threads not woke up = " + prefix;
 	}

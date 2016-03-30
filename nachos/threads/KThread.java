@@ -197,13 +197,11 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
+	KThread thread;
+	while ((thread = toBeDestroyed.waitQueue.nextThread()) != null)
+	    thread.ready();
 	
-	toBeDestroyed.joinLock.acquire();
 	toBeDestroyed.status = statusFinished;
-	toBeDestroyed.joinCond.wakeAll();
-	toBeDestroyed.joinLock.release();
-
-	
 	
 	sleep();
     }
@@ -285,15 +283,20 @@ public class KThread {
      */
     
     // CondVar to implement Join()
-    public Lock joinLock = new Lock();
-    public Condition joinCond = new Condition(joinLock);
-    
+    public ThreadQueue waitQueue =
+    		ThreadedKernel.scheduler.newThreadQueue(true);
     public void join() {
 	Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
-	joinLock.acquire();
-	if (status != statusFinished)
-		joinCond.sleep();
-	joinLock.release();
+	
+	boolean intStatus = Machine.interrupt().disable();
+	KThread thread = KThread.currentThread();
+
+	if (status != statusFinished) {
+	    waitQueue.waitForAccess(thread);
+	    KThread.sleep();
+	}
+	Machine.interrupt().restore(intStatus);
+	
 	Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
 	Lib.assertTrue(this != currentThread);
 	
@@ -429,7 +432,7 @@ public class KThread {
 	
 	//new KThread(new PingTest(1)).setName("forked thread").fork();
 	//new PingTest(0).run();
-	System.out.println(new Tests().testJoin(50)); }
+	System.out.println(new Tests().testJoin(100)); }
     private static final char dbgThread = 't';
 
     /**

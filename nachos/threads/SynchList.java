@@ -54,7 +54,7 @@ public class SynchList {
 
     	lock.acquire();
     	if (list.isEmpty()) o = null;
-    	o = list.removeFirst();
+    	else o = list.removeFirst();
     	lock.release();
 
     	return o;
