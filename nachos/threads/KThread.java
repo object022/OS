@@ -190,10 +190,8 @@ public class KThread {
         Lib.assertTrue(toBeDestroyed == null);
         toBeDestroyed = currentThread;
 
-        toBeDestroyed.joinLock.acquire();
         toBeDestroyed.status = statusFinished;
         toBeDestroyed.joinCond.wakeAll(); // wake () is also fine?
-        toBeDestroyed.joinLock.release();
         
         sleep();
     }
@@ -334,7 +332,7 @@ public class KThread {
      * changed from running to blocked or ready (depending on whether the
      * thread is sleeping or yielding).
      *
-     * @param	finishing	<tt>true</tt> if the current thread is
+     * @param	finishing	<tt>true</tt> if the current thread ris
      *				finished, and should be destroyed by the new
      *				thread.
      */
@@ -350,8 +348,12 @@ public class KThread {
 
 	currentThread = this;
 
+	if (tcb == null)
+		System.out.println("tcb fails");
 	tcb.contextSwitch();
 
+	if (currentThread == null)
+		System.out.println("current thread fails");
 	currentThread.restoreState();
     }
 
@@ -410,7 +412,7 @@ public class KThread {
 	
 	//new KThread(new PingTest(1)).setName("forked thread").fork();
 	//new PingTest(0).run();
-	System.out.println(new Tests().testJoin(30)); }
+	System.out.println(new Tests().testJoin(25)); }
     private static final char dbgThread = 't';
 
     /**

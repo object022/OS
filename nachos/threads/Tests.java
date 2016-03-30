@@ -49,10 +49,13 @@ public class Tests {
 		}
 		
 		Collections.shuffle(tlist);
+		
 		for (int i = 0; i < 2 * n; i++) 
 			tlist.get(i).fork();
-		for (int i = 0; i < 2 * n; i++)
+		for (int i = 0; i < 2 * n; i++) {
+			System.out.println(i);
 			tlist.get(i).join();
+		}
 		synchronized(msg) {
 			int len = msg.size();
 			boolean[] used = new boolean[n + 1];
