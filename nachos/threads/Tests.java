@@ -192,13 +192,13 @@ public class Tests {
 				public void run() {
 					if (thisId != 0) {
 						int res = comm.get(thisId - 1).listen();
-						System.out.println(KThread.currentThread() + " Listened " + res);
+						//System.out.println(KThread.currentThread() + " Listened " + res);
 						if (res != thisId - 1) msg.add(-thisId-1); 
 					}
-					System.out.println(KThread.currentThread() +" Speaking " + thisId);
+					//System.out.println(KThread.currentThread() +" Speaking " + thisId);
 					msg.add(thisId);
 					comm.get(thisId).speak(thisId); 
-					System.out.println(KThread.currentThread() +" Speaked " + thisId);
+					//System.out.println(KThread.currentThread() +" Speaked " + thisId);
 					
 				}
 			}).setName("(comm1) Person #" + Integer.toString(thisId)));
@@ -209,7 +209,6 @@ public class Tests {
 		for (int i = 0; i < n; i++) tlist.get(i).join();
 		for (int i = 0; i < n; i++) {
 			Object o = msg.removeFirstNoWait();
-			System.out.println(o);
 			if (o == null) return "Queue is too small";
 			if ((Integer) o < 0) return "Get incorrect word at " + Integer.toString((Integer) o - 1);
 			if ((Integer) o != i) return "Incorrect order at " +  Integer.toString((Integer) o);
@@ -218,10 +217,52 @@ public class Tests {
 	}
 	/**
 	 * Testing the Communicator class.
-	 * Known as the Ping-Pong test; 
+	 * Known as the Ping-Pong test. This process is also a key component in Boat.
 	 */
-	public String testComm2() {
-		return null;
+	public String testComm2(int n) {
+		Communicator comm1 = new Communicator(), comm2 = new Communicator();
+		KThread ping = new KThread(new Runnable() {
+			@Override
+			public void run() {
+				for (int i = 0; i < n; i++) {
+					if (i % 2 == 0) {
+						//System.out.println("speaking " + i);
+						comm1.speak(i);
+						//System.out.println("spoken " + i);
+					} else {
+						//System.out.println("listening " + i);
+						msg.add((Integer) comm1.listen());
+						//System.out.println("listened " + i);
+					}
+				}
+			}
+		}).setName("(comm2) ping");
+		KThread pong = new KThread(new Runnable() {
+			@Override
+			public void run() {
+				for (int i = 0; i < n; i++) {
+					if (i % 2 == 1) {
+						//System.out.println("speaking " + i);
+						comm1.speak(i);
+						//System.out.println("spoken " + i);
+					} else {
+						//System.out.println("listening " + i);
+						msg.add((Integer) comm1.listen());
+						//System.out.println("listened " + i);
+					}
+				}
+			}
+		}).setName("(comm2) pong");
+		ping.fork();
+		pong.fork();
+		ping.join();
+		pong.join();
+		while (true) {
+			Object o = msg.removeFirstNoWait();
+			if (o == null) break;
+			System.out.println(o);
+		}
+		return "Communicator Test 2 passed, N = " + Integer.toString(n);
 	}
 	/**
 	 * Testing the Boat class.

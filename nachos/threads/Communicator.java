@@ -24,8 +24,8 @@ public class Communicator {
     public Communicator() {
     }
     private Lock lock = new Lock();
-    private Condition condSpeak = new Condition(lock);
-    private Condition condListen = new Condition(lock);
+    private Condition2 condSpeak = new Condition2(lock);
+    private Condition2 condListen = new Condition2(lock);
     private int waitingS = 0, waitingL = 0;
     private LinkedList<Integer> messages = new LinkedList<Integer> ();
     /**
@@ -72,5 +72,6 @@ public class Communicator {
     }
     public static void selfTest() {
     	System.out.println(new Tests().testComm1(20));
+    	System.out.println(new Tests().testComm2(20));
     }
 }
