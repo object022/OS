@@ -36,19 +36,22 @@ public class Communicator {
      * Does not return until this thread is paired up with a listening thread.
      * Exactly one listener should receive <i>word</i>.
      *
+     * NOTE: In this implementation, we can't ensure both thread returns at the same time.
+     * However, we guarantee that when a speaker returns, a listener have been ready, and vice versa.
+     * This pair does not necessarily have the same message, also; We just make sure they paired up.
+     * 
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
     	lock.acquire();
     	messages.add(word);
-    	while (waitingL == 0) {
-    		waitingS++;
+    	waitingS++;
+    	while (waitingL == 0) 
     		condSpeak.sleep();
-    		waitingS--;
-    	}
     	condListen.wake();
+    	waitingL--;
     	lock.release();
-    }
+   }
 
     /**
      * Wait for a thread to speak through this communicator, and then return
@@ -58,17 +61,16 @@ public class Communicator {
      */    
     public int listen() {
     	lock.acquire();
-    	while (waitingS == 0) {
-    		waitingL++;
-    		condListen.sleep();
-    		waitingL--;
-    	}
+    	waitingL++;
+    	while (waitingS == 0) condListen.sleep();
     	condSpeak.wake();
+    	Lib.assertTrue(!messages.isEmpty());
     	int ret = messages.removeFirst();
+    	waitingS--;
     	lock.release();
     	return ret;
     }
     public static void selfTest() {
-    	System.out.println(new Tests().testComm1(40));
+    	System.out.println(new Tests().testComm1(20));
     }
 }

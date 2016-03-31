@@ -192,20 +192,24 @@ public class Tests {
 				public void run() {
 					if (thisId != 0) {
 						int res = comm.get(thisId - 1).listen();
-						System.out.println("Listening " + res);
+						System.out.println(KThread.currentThread() + " Listened " + res);
 						if (res != thisId - 1) msg.add(-thisId-1); 
 					}
-					System.out.println("Speaking " + thisId);
-					comm.get(thisId).speak(thisId);
+					System.out.println(KThread.currentThread() +" Speaking " + thisId);
 					msg.add(thisId);
+					comm.get(thisId).speak(thisId); 
+					System.out.println(KThread.currentThread() +" Speaked " + thisId);
+					
 				}
 			}).setName("(comm1) Person #" + Integer.toString(thisId)));
 		}
 		Collections.shuffle(tlist);
 		for (int i = 0; i < n; i++) tlist.get(i).fork();
 		comm.get(n-1).listen();
+		for (int i = 0; i < n; i++) tlist.get(i).join();
 		for (int i = 0; i < n; i++) {
 			Object o = msg.removeFirstNoWait();
+			System.out.println(o);
 			if (o == null) return "Queue is too small";
 			if ((Integer) o < 0) return "Get incorrect word at " + Integer.toString((Integer) o - 1);
 			if ((Integer) o != i) return "Incorrect order at " +  Integer.toString((Integer) o);
@@ -214,7 +218,7 @@ public class Tests {
 	}
 	/**
 	 * Testing the Communicator class.
-	 * Try generating listens first then speaks; then do it another way.
+	 * Known as the Ping-Pong test; 
 	 */
 	public String testComm2() {
 		return null;
