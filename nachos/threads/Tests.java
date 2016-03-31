@@ -259,7 +259,7 @@ public class Tests {
 		ping.join();
 		pong.join();
 		int s = 0;
-		while (true) {			
+		while (true) {
 			Object o = msg.removeFirstNoWait();
 			if (o == null) break;
 			if ((Integer) o != s++) return "Error: Incorrect order at " + s;
