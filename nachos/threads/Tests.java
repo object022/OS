@@ -27,7 +27,7 @@ public class Tests {
 		List<KThread> joinList = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
-			tlist.add(new KThread(new Runnable() {
+			tlist.add(new KThread( new Runnable() {
 				@Override
 				public void run() {
 					msg.add(thisId + 1);
@@ -37,11 +37,12 @@ public class Tests {
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
 			final KThread toJoin = tlist.get(thisId);
-			KThread curThread = new KThread(new Runnable() {
+			KThread curThread = new KThread( new Runnable() {
 				@Override
 				public void run() {
 					toJoin.join();
-					msg.add(-thisId - 1);}
+					msg.add(-thisId - 1);
+				}
 			}).setName("Joiner #" + Integer.toString(thisId));
 			tlist.add(curThread);
 			joinList.add(curThread);
@@ -240,15 +241,6 @@ public class Tests {
 			public void run() {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 0) {
-<<<<<<< HEAD
-						//System.out.println("speaking " + i);
-						comm.speak(i);
-						//System.out.println("spoken " + i);
-					} else {
-						//System.out.println("listening " + i);
-						msg.add((Integer) comm.listen());
-						//System.out.println("listened " + i);
-=======
 						//System.out.println("ping speaking " + i);
 						comm.speak(i);
 						//System.out.println("ping spoken " + i);
@@ -256,7 +248,6 @@ public class Tests {
 						//System.out.println("ping listening " + i);
 						msg.add((Integer) comm.listen());
 						//System.out.println("ping listened " + i);
->>>>>>> origin/work
 					}
 				}
 			}
@@ -266,15 +257,6 @@ public class Tests {
 			public void run() {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 1) {
-<<<<<<< HEAD
-						//System.out.println("speaking " + i);
-						comm.speak(i);
-						//System.out.println("spoken " + i);
-					} else {
-						//System.out.println("listening " + i);
-						msg.add((Integer) comm.listen());
-						//System.out.println("listened " + i);
-=======
 						//System.out.println("pong speaking " + i);
 						comm.speak(i);
 						//System.out.println("pong spoken " + i);
@@ -282,7 +264,6 @@ public class Tests {
 						//System.out.println("pong listening " + i);
 						msg.add((Integer) comm.listen());
 						//System.out.println("pong listened " + i);
->>>>>>> origin/work
 					}
 				}
 			}
@@ -299,44 +280,6 @@ public class Tests {
 		}
 		if (s != n) return "Error: incorrect message queue length: " + s;
 		return "Communicator Test 2 passed, N = " + Integer.toString(n);
-<<<<<<< HEAD
-	}
-	/**
-	 * Testing the Communicator class, Part 3.
-	 * We now try to dump a lot of requests on the same communicator.
-	 */
-	public String testComm3(int n) {
-		LinkedList<KThread> tlist = new LinkedList<KThread> ();
-		Communicator comm = new Communicator(); 
-		for (int i = 0; i < n; i++) {
-			int thisId = i;
-			tlist.add(new KThread(new Runnable() {
-				@Override
-				public void run() {
-					comm.speak(thisId);
-				}
-			}).setName("(comm3) speaker #" + thisId));
-			tlist.add(new KThread(new Runnable() {
-				@Override
-				public void run() {
-					msg.add(comm.listen());
-				}
-			}).setName("(comm3) listener #" + thisId));
-		}
-		Collections.shuffle(tlist);
-		for (int i = 0; i < 2 * n; i++) tlist.get(i).fork();
-		for (int i = 0; i < 2 * n; i++) tlist.get(i).join();
-		final int ns = n;
-		boolean[] v = new boolean[ns];
-		for (int i = 0; i < n; i++) {
-			Object o = msg.removeFirstNoWait();
-			if (v[(Integer) o]) return "Wrong order at " + i;
-			v[(Integer) o] = true;
-			if (o == null) return "Wrong queue size";
-		}
-		return "Communicator Test 3 passed, N = " + n;
-=======
->>>>>>> origin/work
 	}
 	/**
 	 * Testing the Communicator class, Part 3.

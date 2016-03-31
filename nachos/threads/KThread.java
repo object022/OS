@@ -283,7 +283,6 @@ public class KThread {
      * thread.
      */
     
-    // CondVar to implement Join()
     public ThreadQueue waitQueue =
     		ThreadedKernel.scheduler.newThreadQueue(true);
     public void join() {
@@ -303,6 +302,7 @@ public class KThread {
         Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
         Lib.assertTrue(this != currentThread);
     }
+
 
     /**
      * Create the idle thread. Whenever there are no threads ready to be run,

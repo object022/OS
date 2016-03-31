@@ -62,6 +62,8 @@ public class BoatGrader {
     /* ChildRowToOahu should be called when a child pilots the boat
        from Molokai to Oahu*/
     public synchronized void ChildRowToOahu() {
+    if (verbosity > 0)
+    	System.out.println("**Child rowing to Oahu.");
 	childOnMolokai -= 1;
 	childOnOahu += 1;
 	if (!boatPos) {
@@ -112,7 +114,6 @@ public class BoatGrader {
 	peopleOnBoat = 2;
 	}
 	if (childOnOahu == 0)
-		if (adultOnOahu == 0)
 		if (adultOnOahu == 0){
 			if (hasError)
 			System.out.println("Process ended with error present");
