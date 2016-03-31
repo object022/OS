@@ -26,7 +26,9 @@ public class Communicator {
     private Lock lock = new Lock();
     private Condition2 condSpeak = new Condition2(lock);
     private Condition2 condListen = new Condition2(lock);
-    private int waitingS = 0, waitingL = 0;
+    private Condition2 condSpeak2 = new Condition2(lock);
+    private Condition2 condListen2 = new Condition2(lock);
+    private int waitingS = 0, waitingL = 0, waitingS2 = 0, waitingL2 = 0;
     private LinkedList<Integer> messages = new LinkedList<Integer> ();
     /**
      * Wait for a thread to listen through this communicator, and then transfer
@@ -51,6 +53,20 @@ public class Communicator {
     	condListen.wake();
     	waitingL--;
     	lock.release();
+    	
+    	
+    	//Second synch
+    	lock.acquire();
+    	waitingS2++;
+    	while (waitingL2 == 0) {
+    		
+    		condSpeak2.sleep();
+    		
+    	}
+    	waitingL2--;
+    	condListen2.wake();
+    	lock.release();
+    	
    }
 
     /**
@@ -68,10 +84,19 @@ public class Communicator {
     	int ret = messages.removeFirst();
     	waitingS--;
     	lock.release();
+    	
+    	lock.acquire();
+    	waitingL2++;
+    	while (waitingS2 == 0) condListen2.sleep();
+    	waitingS2--;
+    	condSpeak2.wake();
+    	lock.release();
+    	
     	return ret;
     }
     public static void selfTest() {
     	System.out.println(new Tests().testComm1(20));
     	System.out.println(new Tests().testComm2(20));
+    	System.out.println(new Tests().testComm3(20));
     }
 }

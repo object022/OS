@@ -218,20 +218,21 @@ public class Tests {
 	/**
 	 * Testing the Communicator class.
 	 * Known as the Ping-Pong test. This process is also a key component in Boat.
+	 * A single communicator should be able to hold the alternating call of speak and listen.
 	 */
 	public String testComm2(int n) {
-		Communicator comm1 = new Communicator(), comm2 = new Communicator();
+		Communicator comm = new Communicator();
 		KThread ping = new KThread(new Runnable() {
 			@Override
 			public void run() {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 0) {
 						//System.out.println("speaking " + i);
-						comm1.speak(i);
+						comm.speak(i);
 						//System.out.println("spoken " + i);
 					} else {
 						//System.out.println("listening " + i);
-						msg.add((Integer) comm1.listen());
+						msg.add((Integer) comm.listen());
 						//System.out.println("listened " + i);
 					}
 				}
@@ -243,11 +244,11 @@ public class Tests {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 1) {
 						//System.out.println("speaking " + i);
-						comm1.speak(i);
+						comm.speak(i);
 						//System.out.println("spoken " + i);
 					} else {
 						//System.out.println("listening " + i);
-						msg.add((Integer) comm1.listen());
+						msg.add((Integer) comm.listen());
 						//System.out.println("listened " + i);
 					}
 				}
@@ -257,12 +258,49 @@ public class Tests {
 		pong.fork();
 		ping.join();
 		pong.join();
-		while (true) {
+		int s = 0;
+		while (true) {			
 			Object o = msg.removeFirstNoWait();
 			if (o == null) break;
-			System.out.println(o);
+			if ((Integer) o != s++) return "Error: Incorrect order at " + s;
 		}
+		if (s != n) return "Error: incorrect message queue length: " + s;
 		return "Communicator Test 2 passed, N = " + Integer.toString(n);
+	}
+	/**
+	 * Testing the Communicator class, Part 3.
+	 * We now try to dump a lot of requests on the same communicator.
+	 */
+	public String testComm3(int n) {
+		LinkedList<KThread> tlist = new LinkedList<KThread> ();
+		Communicator comm = new Communicator(); 
+		for (int i = 0; i < n; i++) {
+			int thisId = i;
+			tlist.add(new KThread(new Runnable() {
+				@Override
+				public void run() {
+					comm.speak(thisId);
+				}
+			}).setName("(comm3) speaker #" + thisId));
+			tlist.add(new KThread(new Runnable() {
+				@Override
+				public void run() {
+					msg.add(comm.listen());
+				}
+			}).setName("(comm3) listener #" + thisId));
+		}
+		Collections.shuffle(tlist);
+		for (int i = 0; i < 2 * n; i++) tlist.get(i).fork();
+		for (int i = 0; i < 2 * n; i++) tlist.get(i).join();
+		final int ns = n;
+		boolean[] v = new boolean[ns];
+		for (int i = 0; i < n; i++) {
+			Object o = msg.removeFirstNoWait();
+			if (v[(Integer) o]) return "Wrong order at " + i;
+			v[(Integer) o] = true;
+			if (o == null) return "Wrong queue size";
+		}
+		return "Communicator Test 3 passed, N = " + n;
 	}
 	/**
 	 * Testing the Boat class.
