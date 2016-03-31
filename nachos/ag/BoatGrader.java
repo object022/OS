@@ -1,5 +1,9 @@
 package nachos.ag;
 
+import java.util.Random;
+
+import nachos.threads.KThread;
+
 public class BoatGrader {
 
     /**
@@ -14,6 +18,12 @@ public class BoatGrader {
      * this class does not imply that any of the indicated actions
      * are a good idea or even allowed.
      */
+	
+	//Random rng = new Random();
+	private boolean ran2() {
+		return Math.random() > 0.5;
+	}
+	
 	int childOnOahu = 0, childOnMolokai = 0, 
 		adultOnOahu = 0, adultOnMolokai = 0,
 		peopleOnBoat = 0;
@@ -27,7 +37,7 @@ public class BoatGrader {
 		System.out.println("Error: " + note);
 		hasError = true;
 	}
-	public synchronized void initializeChild(){
+	public void initializeChild(){
 		if (verbosity > 0)
 		System.out.println("A child has forked.");
 		childOnOahu += 1;
@@ -35,7 +45,7 @@ public class BoatGrader {
 	
 	//NEW ADDITION FOR 2014
 	//MUST BE CALLED AT THE START OF ADULTITINERARY!
-	public synchronized void initializeAdult(){
+	public void initializeAdult(){
 		if (verbosity > 0)
 		System.out.println("An adult as forked.");
 		adultOnOahu += 1;
@@ -43,7 +53,10 @@ public class BoatGrader {
 
     /* ChildRowToMolokai should be called when a child pilots the boat
        from Oahu to Molokai */
-    public synchronized void ChildRowToMolokai() {
+    public void ChildRowToMolokai() {
+    	
+    	if (ran2()) KThread.yield();
+    	
     	if (verbosity > 0)
     	System.out.println("**Child rowing to Molokai.");
     	childOnOahu -= 1;
@@ -61,7 +74,10 @@ public class BoatGrader {
 
     /* ChildRowToOahu should be called when a child pilots the boat
        from Molokai to Oahu*/
-    public synchronized void ChildRowToOahu() {
+    public void ChildRowToOahu() {
+    	
+    	if (ran2()) KThread.yield();
+    	
     if (verbosity > 0)
     	System.out.println("**Child rowing to Oahu.");
 	childOnMolokai -= 1;
@@ -79,7 +95,10 @@ public class BoatGrader {
 
     /* ChildRideToMolokai should be called when a child not piloting
        the boat disembarks on Molokai */
-    public synchronized void ChildRideToMolokai() {
+    public void ChildRideToMolokai() {
+    	
+    	if (ran2()) KThread.yield();
+    	
 	if (verbosity > 0)
     	System.out.println("**Child arrived on Molokai as a passenger.");
 	childOnOahu -= 1;
@@ -100,7 +119,10 @@ public class BoatGrader {
 
     /* ChildRideToOahu should be called when a child not piloting
        the boat disembarks on Oahu */
-    public synchronized void ChildRideToOahu() {
+    public void ChildRideToOahu() {
+    	
+    	if (ran2()) KThread.yield();
+    	
 	if (verbosity > 0)
     	System.out.println("**Child arrived on Oahu as a passenger.");
 	childOnMolokai -= 1;
@@ -125,7 +147,10 @@ public class BoatGrader {
 
     /* AdultRowToMolokai should be called when a adult pilots the boat
        from Oahu to Molokai */
-    public synchronized void AdultRowToMolokai() {
+    public void AdultRowToMolokai() {
+    	
+    	if (ran2()) KThread.yield();
+    	
 	if (verbosity > 0)
     	System.out.println("**Adult rowing to Molokai.");
 	adultOnOahu -= 1;

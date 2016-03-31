@@ -9,6 +9,8 @@ public class Boat
 {
 	
 	/**
+	 * 
+	 * @author HY Zheng
 	 * Notes on the Implementation of Boat(Project 1 Task 6)
 	 * Our strategy is pretty simple. First there is a vote for children
 	 * and two children becomes leader and assistant. The rest people waiting
