@@ -227,13 +227,13 @@ public class Tests {
 			public void run() {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 0) {
-						//System.out.println("speaking " + i);
+						//System.out.println("ping speaking " + i);
 						comm.speak(i);
-						//System.out.println("spoken " + i);
+						//System.out.println("ping spoken " + i);
 					} else {
-						//System.out.println("listening " + i);
+						//System.out.println("ping listening " + i);
 						msg.add((Integer) comm.listen());
-						//System.out.println("listened " + i);
+						//System.out.println("ping listened " + i);
 					}
 				}
 			}
@@ -243,13 +243,13 @@ public class Tests {
 			public void run() {
 				for (int i = 0; i < n; i++) {
 					if (i % 2 == 1) {
-						//System.out.println("speaking " + i);
+						//System.out.println("pong speaking " + i);
 						comm.speak(i);
-						//System.out.println("spoken " + i);
+						//System.out.println("pong spoken " + i);
 					} else {
-						//System.out.println("listening " + i);
+						//System.out.println("pong listening " + i);
 						msg.add((Integer) comm.listen());
-						//System.out.println("listened " + i);
+						//System.out.println("pong listened " + i);
 					}
 				}
 			}
@@ -303,12 +303,6 @@ public class Tests {
 		return "Communicator Test 3 passed, N = " + n;
 	}
 	/**
-	 * Testing the Boat class.
-	 * There are seemingly not much thing to do, except shuffling the starting orders.
-	 * Requires changes to RoundRobinScheduler(current default) to work with this class.
-	 * Requires changes to BoatGrader to work with this class.
+	 * Testing the Boat class - Moved to Boat.selfTest()
 	 */
-	public String testBoat() {
-		return null;
-	}
 }

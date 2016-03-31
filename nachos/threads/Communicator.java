@@ -26,10 +26,15 @@ public class Communicator {
     private Lock lock = new Lock();
     private Condition condSpeak = new Condition(lock);
     private Condition condListen = new Condition(lock);
-    private Condition condSpeak2 = new Condition(lock);
-    private Condition condListen2 = new Condition(lock);
-    private int waitingS = 0, waitingL = 0, waitingS2 = 0, waitingL2 = 0;
-    private LinkedList<Integer> messages = new LinkedList<Integer> ();
+    private Condition condRet = new Condition(lock);
+    private int msg = 0;
+    int status = s_waitS; 
+    int waitingL = 0, waitingS = 0;
+    private static final int s_waitS = 0; // Waiting a speaker that has not appeared
+    private static final int s_waitSq = 1; // Waiting a speaker that was summoned from the queue
+    private static final int s_waitL = 2; // Waiting a listener that has not appeared
+    private static final int s_waitLq = 3; // Waiting a listener that was summoned from the queue
+    private static final int s_waitR = 4; // Waiting a speaker to confirm return
     /**
      * Wait for a thread to listen through this communicator, and then transfer
      * <i>word</i> to the listener.
@@ -46,25 +51,36 @@ public class Communicator {
      */
     public void speak(int word) {
     	lock.acquire();
-    	messages.add(word);
-    	waitingS++;
-    	while (waitingL == 0) 
+    	if (status != s_waitS) {
+    		waitingS++;
+    		//System.out.println(KThread.currentThread() + " Speaker slept, state = " + status);
     		condSpeak.sleep();
-    	condListen.wake();
-    	waitingL--;
-    	lock.release();
-    	
-    	
-    	//Second synch
-    	lock.acquire();
-    	waitingS2++;
-    	while (waitingL2 == 0) {
-    		
-    		condSpeak2.sleep();
-        	
+    		//System.out.println(KThread.currentThread() + " Speaker arrives");
+    		waitingS--;
     	}
-    	waitingL2--;
-    	condListen2.wake();
+    	else ;//System.out.println(KThread.currentThread() + " Speaker arrives without sleep");
+    	Lib.assertTrue(status == s_waitS || status == s_waitSq);
+   	
+    	msg = word;
+    	if (waitingL > 0) {
+    		//System.out.println(KThread.currentThread() + " Wake up a listener");
+    		condListen.wake();
+    		status = s_waitLq;
+    	}
+    	else
+    		status = s_waitL;
+    	
+    	condRet.sleep();
+    	Lib.assertTrue(status == s_waitR);
+    	
+    	//System.out.println(KThread.currentThread() + " Speaker returns");
+    	
+    	if (waitingS > 0) {
+        	//System.out.println(KThread.currentThread() + " Wake up a speaker");
+    		status = s_waitSq;
+        	condSpeak.wake();
+    	}
+    	else status = s_waitS;
     	lock.release();
    }
 
@@ -76,26 +92,25 @@ public class Communicator {
      */    
     public int listen() {
     	lock.acquire();
-    	waitingL++;
-    	while (waitingS == 0) condListen.sleep();
-    	condSpeak.wake();
-    	Lib.assertTrue(!messages.isEmpty());
-    	int ret = messages.removeFirst();
-    	waitingS--;
-    	lock.release();
-    	
-    	lock.acquire();
-    	
-    	waitingL2++;
-    	while (waitingS2 == 0) {
-    		
-    		condListen2.sleep();
-    		
+    	if (status!= s_waitL) {
+    		waitingL++;
+    		//System.out.println(KThread.currentThread() + " Listener slept, state = " + status);
+    		condListen.sleep();
+    		//System.out.println(KThread.currentThread() + " Listener arrives");
+    		waitingL--;
     	}
-    	waitingS2--;
-    	condSpeak2.wake();
-    	lock.release();
+    	else ;//System.out.println(KThread.currentThread() + " Listener arrives without sleep");
     	
+    	
+    	
+    	Lib.assertTrue(status == s_waitL || status == s_waitLq);
+    	
+    	//System.out.println(KThread.currentThread() + " Wake up a returner");
+    	
+    	int ret = msg;
+    	condRet.wake();
+    	status = s_waitR;
+    	lock.release();
     	return ret;
     }
     public static void selfTest() {
