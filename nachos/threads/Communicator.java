@@ -111,19 +111,6 @@ public class Communicator {
     	condRet.wake();
     	status = s_waitR;
     	lock.release();
-    	
-    	lock.acquire();
-    	
-    	waitingL2++;
-    	while (waitingS2 == 0) {
-    		
-    		condListen2.sleep();
-    		
-    	}
-    	waitingS2--;
-    	condSpeak2.wake();
-    	lock.release();
-    	
     	return ret;
     }
     public static void selfTest() {
