@@ -329,7 +329,7 @@ public class Tests {
 			if (o == null) break;
 			System.out.println(o);
 		}
-		return "Alarm Test passed, N = " + n + " Int = " + interval;
+		return "Alarm Test ended, N = " + n + " Int = " + interval + ", please check the results";
 	}
 	/**
 	 * Testing the Boat class - Moved to Boat.selfTest()
