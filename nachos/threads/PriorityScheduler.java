@@ -279,22 +279,34 @@ public class PriorityScheduler extends Scheduler {
         }
 	
         public void addPrev(ThreadState node) {
-        	System.out.println("Adding link:" + node + "->" + this);
+        	if (node.donatePriority && this.donatePriority)
+        	System.out.println("Before: " + node + "    " + this);
             pr.add(node);
             node.ne.add(this);
             update_local();
+            
+            if (node.donatePriority && this.donatePriority)
+            	System.out.println("After : " + node + " -> " + this);
         }
         
         public void delPrev(ThreadState node) {
-        	System.out.println("Removing link:" + node + "->" + this);
+        	if (node.donatePriority && this.donatePriority)
+        	System.out.println("Before:" + node + " -> " + this);
             
             pr.remove(node);
             node.ne.remove(this);
             update_local();
+            
+            if (node.donatePriority && this.donatePriority)
+            System.out.println("After :" + node + "    " + this);
+            
         }
         @Override
         public String toString() {
-        	return "[" + nodeId + " c:" + current + " i:" + priority + "]"  + thread + " " + queue;
+        	if (thread != null)
+        	return "[c:" + current + " i:" + priority + "] (T)"  + thread;
+        	else
+        		return "[c:" + current + " i:" + priority + "] (Q)" + nodeId;
         }
 	
 	/**
@@ -323,7 +335,7 @@ public class PriorityScheduler extends Scheduler {
         public void setPriority(int priority) {
             if (this.priority == priority)
                 return;
-	    
+            System.out.println(this.priority + " -> " + priority + ":" + this);
             this.priority = priority;
             update_local();
         }
