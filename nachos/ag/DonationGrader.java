@@ -40,19 +40,34 @@ public class DonationGrader extends BasicTestGrader {
 			public void run() {
 				lock.acquire();
 				lock.release();
+				System.out.println("High priority thread completes");
 			}
 		}, highPriority);
 
 		forkNewThread(new Runnable() {
 			@Override
 			public void run() {
-				alwaysYield();
+				boolean intStatus = Machine.interrupt().disable();
+				System.out.println("Mid priority thread yields "  
+				+ ThreadedKernel.scheduler.getEffectivePriority()
+				+ " Intrinstic "+ ThreadedKernel.scheduler.getPriority());
+				Machine.interrupt().restore(intStatus);
+				
+				for (int i = 0; i < 10; ++i) {
+					System.out.println("Mid priority thread yields");
+					KThread.yield();
+				}
+				System.out.println("Mid priority thread returns");
 				assertTrue(false, "Maybe error in your priority donation.");
 			}
 		}, midPriority);
-
+		System.out.println("Low priority thread yields " + ThreadedKernel.scheduler.getEffectivePriority());
 		Machine.interrupt().restore(insStatus);
-		alwaysYield();
+		for (int i = 0; i < 10; ++i) {
+			System.out.println("Low priority thread yields");
+			KThread.yield();
+		}
+		System.out.println("Low priority thread returns");
 		lock.release();
 	}
 
@@ -80,7 +95,7 @@ public class DonationGrader extends BasicTestGrader {
 	}
 
 	private void alwaysYield() {
-		for (int i = 0; i < 10000; ++i) {
+		for (int i = 0; i < 10; ++i) {
 			KThread.yield();
 		}
 	}

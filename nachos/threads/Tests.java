@@ -334,7 +334,16 @@ public class Tests {
 	/**
 	 * Testing the Boat class - Moved to Boat.selfTest()
 	 */
-	/**
-	 * Testing the PriorityScheduler - Done by Andy Wan
-	 */
+	public String testPriority() {
+		boolean intStatus = Machine.interrupt().disable();
+		KThread a = new KThread(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+			}
+		});
+		Machine.interrupt().restore(intStatus);
+		return "PriorityScheduler test ended, check the results";
+		
+	}
 }

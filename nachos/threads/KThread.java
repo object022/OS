@@ -174,8 +174,11 @@ public class KThread {
 	Lib.assertTrue(this == currentThread);
 
 	restoreState();
+	
+	waitQueue.acquire(this);
 
 	Machine.interrupt().enable();
+	
     }
 
     /**

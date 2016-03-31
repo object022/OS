@@ -176,17 +176,17 @@ public class PriorityScheduler extends Scheduler {
 	 *		return.
 	 */
         protected ThreadState pickNextThread() {  
-            if (this.transferPriority)
+            /*if (this.transferPriority)
                 return node.maxPrev();
             else {
-            	if (node.pr.isEmpty()) return null;
-                ThreadState ret = node.pr.getFirst();
+            	ThreadState ret = node.pr.getFirst();
                 for (Iterator<ThreadState> iter = node.pr.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
                     if (cur.priority > ret.priority) ret = cur;
                 }
                 return ret;
-            }
+            }*/
+        	return node.maxPrev();
         }
 	
         public void print() {
@@ -217,20 +217,17 @@ public class PriorityScheduler extends Scheduler {
 	 *
 	 * @param	thread	the thread this state belongs to.
 	 */
-        public ThreadState(KThread thread, PriorityQueue priorityQueue) {
-            this.thread = thread;
-            this.queue = priorityQueue;
-            setPriority(priorityDefault);
-            nodeId = totalNodes++;
-        }
+    	public boolean donatePriority;
         public ThreadState(KThread thread) {
             this.thread = thread;
             setPriority(priorityDefault);
             nodeId = totalNodes++;
+            donatePriority = true;
         }
         public ThreadState(PriorityQueue queue) {
             this.queue = queue;
             setPriority(priorityMinimum - 1);
+            donatePriority = queue.transferPriority;
         }
 
         public int currentMax() {
@@ -240,6 +237,7 @@ public class PriorityScheduler extends Scheduler {
         }
         
         public ThreadState maxPrev() {
+        	if (pr.isEmpty()) return null;
             ThreadState ret = pr.getFirst();
             for (Iterator<ThreadState> iter = pr.iterator();iter.hasNext();) {
                 ThreadState cur = iter.next();
@@ -257,37 +255,46 @@ public class PriorityScheduler extends Scheduler {
         }
         
         public void update(ThreadState prev) {
+        	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
-                for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
+                current = newMax;
+            	for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
                     cur.update(this);
                 }
-                current = newMax;
             }
         }
 	
         public void update_local() {
+        	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
+                current = newMax;
                 for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
                     cur.update(this);
                 }
-                current = newMax;
             }
         }
 	
         public void addPrev(ThreadState node) {
+        	System.out.println("Adding link:" + node + "->" + this);
             pr.add(node);
             node.ne.add(this);
             update_local();
         }
         
         public void delPrev(ThreadState node) {
+        	System.out.println("Removing link:" + node + "->" + this);
+            
             pr.remove(node);
             node.ne.remove(this);
             update_local();
+        }
+        @Override
+        public String toString() {
+        	return "[" + nodeId + " c:" + current + " i:" + priority + "]"  + thread + " " + queue;
         }
 	
 	/**

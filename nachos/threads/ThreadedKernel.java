@@ -1,5 +1,6 @@
 package nachos.threads;
 
+import nachos.ag.AutoGrader;
 import nachos.ag.BoatGrader;
 import nachos.ag.PriorityGrader;
 import nachos.ag.PriorityGraderS1;
@@ -59,8 +60,6 @@ public class ThreadedKernel extends Kernel {
 	//if (Machine.bank() != null) {
 	  //  ElevatorBank.selfTest();
 	//}
-	PriorityGraderS1 g1 = new PriorityGraderS1 ();
-	g1.run();
     }
     
     /**
