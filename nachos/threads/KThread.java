@@ -282,25 +282,26 @@ public class KThread {
      * thread.
      */
     
-    // CondVar to implement Join()
     public ThreadQueue waitQueue =
     		ThreadedKernel.scheduler.newThreadQueue(true);
     public void join() {
-	Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
+        Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
 	
-	boolean intStatus = Machine.interrupt().disable();
-	KThread thread = KThread.currentThread();
+        boolean intStatus = Machine.interrupt().disable();
+        KThread thread = KThread.currentThread();
 
-	if (status != statusFinished) {
-	    waitQueue.waitForAccess(thread);
-	    KThread.sleep();
-	}
-	Machine.interrupt().restore(intStatus);
+        if (status != statusFinished) {
+            waitQueue.waitForAccess(thread);
+            Lib.assertTrue(this.schedulingState != null);
+            waitQueue.acquire(this);
+            KThread.sleep();
+        }
+        Machine.interrupt().restore(intStatus);
 	
-	Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
-	Lib.assertTrue(this != currentThread);
-	
+        Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
+        Lib.assertTrue(this != currentThread);
     }
+
 
     /**
      * Create the idle thread. Whenever there are no threads ready to be run,
