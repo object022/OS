@@ -27,7 +27,7 @@ public class Tests {
 		List<KThread> joinList = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
-			tlist.add(new KThread(new Runnable() {
+			tlist.add(new KThread( new Runnable() {
 				@Override
 				public void run() {
 					msg.add(thisId + 1);
@@ -37,11 +37,12 @@ public class Tests {
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
 			final KThread toJoin = tlist.get(thisId);
-			KThread curThread = new KThread(new Runnable() {
+			KThread curThread = new KThread( new Runnable() {
 				@Override
 				public void run() {
 					toJoin.join();
-					msg.add(-thisId - 1);}
+					msg.add(-thisId - 1);
+				}
 			}).setName("Joiner #" + Integer.toString(thisId));
 			tlist.add(curThread);
 			joinList.add(curThread);
@@ -86,39 +87,51 @@ public class Tests {
 			KThread t = new KThread(new Runnable() {
 				@Override
 				public void run() {
+                    boolean intStatus = Machine.interrupt().disable();
 					lock.acquire();
 					cond.wake();
 					msg.add(1);
 					lock.release();
+                    Machine.interrupt().restore(intStatus);
 				}
-			}).setName("(cond1) sleeper #" + Integer.toString(thisId));
+			}).setName("(cond1) waker #" + Integer.toString(thisId));
+			boolean state = Machine.interrupt().disable();
+			ThreadedKernel.scheduler.setPriority(t, 2);
+			Machine.interrupt().restore(state);
 			tlist.add(t);
 			joinList.add(t);
-			tlist.add(new KThread(new Runnable() {
+			KThread s = new KThread(new Runnable() {
 				@Override
 				public void run() {
+                    boolean intStatus = Machine.interrupt().disable();
 					lock.acquire();
 					cond.sleep();
 					msg.add(-1);
 					lock.release();
+                    Machine.interrupt().restore(intStatus);
 				}
-			}).setName("(cond1) waker #" + Integer.toString(thisId)));
+			}).setName("(cond1) sleeper #" + Integer.toString(thisId));
+			state = Machine.interrupt().disable();
+			ThreadedKernel.scheduler.setPriority(s, 3);
+			Machine.interrupt().restore(state);
+			tlist.add(s);
 		}
 		Collections.shuffle(tlist);
 		for (int i = 0; i < 2 * n; i++) {
 			Lib.assertTrue(tlist.get(i).getTCB() != null);
 			tlist.get(i).fork();
 		}
-		for (int i = 0; i < n; i++)
-			joinList.get(i).join();
-		int prefix = 0;
-			while (true) {
-				Object o = msg.removeFirstNoWait();
-				if (o == null) break;
-				prefix += (Integer) o;
-				if (prefix < 0) return "Too many threads awoken from wake calls";
-			}
-		
+        for (int i = 0; i < n; i++){
+            joinList.get(i).join();
+        }
+        Integer prefix = 0;
+		while (true) {
+            Object o = msg.removeFirstNoWait();
+            if (o == null) break;
+            prefix  += (Integer) o;
+            if (prefix < 0)
+                return "Too many threads awoken from wake calls";
+        }
 		return "Condition Variable Test 1 Succeed N = " + Integer.toString(n)
 			+ " # of threads not woke up = " + prefix;
 	}

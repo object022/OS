@@ -3,6 +3,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 import nachos.ag.BoatGrader;
+import nachos.threads.PriorityScheduler.ThreadState;
 
 public class Boat
 {
@@ -110,8 +111,6 @@ public class Boat
 		}
 	};
 	
-	
-	// Test: Shuffle
 	LinkedList<KThread> tlist = new LinkedList<KThread> ();
 	for (int i = 0; i < adults; i++)
 		tlist.add(new KThread(runnableAdult).setName("Adult #" + i));
@@ -139,6 +138,7 @@ public class Boat
 	}
 	
     }
+    
 
     static int aid = 0;
     static void AdultItinerary()
