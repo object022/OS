@@ -295,9 +295,7 @@ public class KThread {
         if (status != statusFinished) {
             waitQueue.waitForAccess(thread);
             Lib.assertTrue(this.schedulingState != null);
-            int p = ((ThreadState) currentThread.schedulingState).getPriority();
-            if (p > ((ThreadState) this.schedulingState).getPriority())
-            	((ThreadState) this.schedulingState).setPriority(p);
+            waitQueue.acquire(this);
             KThread.sleep();
         }
         Machine.interrupt().restore(intStatus);

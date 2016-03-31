@@ -1,5 +1,8 @@
 package nachos.threads;
+import java.util.PriorityQueue;
+
 import nachos.ag.BoatGrader;
+import nachos.threads.PriorityScheduler.ThreadState;
 
 public class Boat
 {
@@ -71,6 +74,7 @@ public class Boat
     public static Lock lock;
     public static Condition condLeader, condAssist, condPeople;
     public static Communicator toBoat, onOahu, onMolokai;
+    public static PriorityQueue queue;
     public static int leaderVote = 0;
     public static void begin( int adults, int children, BoatGrader b )
     {
@@ -102,8 +106,11 @@ public class Boat
 		}
 	};
 	
-	for (int i = 0; i < adults; i++)
-		new KThread(runnableAdult).setName("Adult #" + i).fork();
+	for (int i = 0; i < adults; i++){
+		KThread t = new KThread(runnableAdult).setName("Adult #" + i);
+		t.fork();
+		((ThreadState)t.schedulingState).setPriority(2);
+	}
 	for (int i = 0; i < children; i++)
 		new KThread(runnableChildren).setName("Child #" + i).fork();
 
@@ -123,6 +130,7 @@ public class Boat
 	}
 	
     }
+    
 
     static void AdultItinerary()
     {

@@ -26,7 +26,9 @@ public class Communicator {
     private Lock lock = new Lock();
     private Condition condSpeak = new Condition(lock);
     private Condition condListen = new Condition(lock);
-    private int waitingS = 0, waitingL = 0;
+    private Condition condSpeak2 = new Condition(lock);
+    private Condition condListen2 = new Condition(lock);
+    private int waitingS = 0, waitingL = 0, waitingS2 = 0, waitingL2 = 0;
     private LinkedList<Integer> messages = new LinkedList<Integer> ();
     /**
      * Wait for a thread to listen through this communicator, and then transfer
@@ -36,19 +38,35 @@ public class Communicator {
      * Does not return until this thread is paired up with a listening thread.
      * Exactly one listener should receive <i>word</i>.
      *
+     * NOTE: In this implementation, we can't ensure both thread returns at the same time.
+     * However, we guarantee that when a speak er returns, a listener have been ready, and vice versa.
+     * This pair does not necessarily have the same message, also; We just make sure they paired up.
+     * 
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
     	lock.acquire();
     	messages.add(word);
-    	while (waitingL == 0) {
-    		waitingS++;
+    	waitingS++;
+    	while (waitingL == 0) 
     		condSpeak.sleep();
-    		waitingS--;
-    	}
     	condListen.wake();
+    	waitingL--;
     	lock.release();
-    }
+    	
+    	
+    	//Second synch
+    	lock.acquire();
+    	waitingS2++;
+    	while (waitingL2 == 0) {
+    		
+    		condSpeak2.sleep();
+        	
+    	}
+    	waitingL2--;
+    	condListen2.wake();
+    	lock.release();
+   }
 
     /**
      * Wait for a thread to speak through this communicator, and then return
@@ -58,14 +76,31 @@ public class Communicator {
      */    
     public int listen() {
     	lock.acquire();
-    	while (waitingS == 0) {
-    		waitingL++;
-    		condListen.sleep();
-    		waitingL--;
-    	}
+    	waitingL++;
+    	while (waitingS == 0) condListen.sleep();
     	condSpeak.wake();
+    	Lib.assertTrue(!messages.isEmpty());
     	int ret = messages.removeFirst();
+    	waitingS--;
     	lock.release();
+    	
+    	lock.acquire();
+    	
+    	waitingL2++;
+    	while (waitingS2 == 0) {
+    		
+    		condListen2.sleep();
+    		
+    	}
+    	waitingS2--;
+    	condSpeak2.wake();
+    	lock.release();
+    	
     	return ret;
+    }
+    public static void selfTest() {
+    	System.out.println(new Tests().testComm1(20));
+    	System.out.println(new Tests().testComm2(20));
+    	System.out.println(new Tests().testComm3(20));
     }
 }
