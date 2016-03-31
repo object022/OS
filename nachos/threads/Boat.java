@@ -71,7 +71,7 @@ public class Boat
     }
 
     public static Lock lock;
-    public static Condition2 condLeader, condAssist, condPeople;
+    public static Condition condLeader, condAssist, condPeople;
     public static Communicator toBoat, onOahu, onMolokai, cheat;
     
     //Cheating Info: When the PriorityQueue is correctly implemented, let begin have higher priority than
@@ -85,9 +85,9 @@ public class Boat
 	// variable to be accessible by children.
 	bg = b;
 	lock = new Lock();
-	condLeader = new Condition2(lock);
-	condAssist = new Condition2(lock);
-	condPeople = new Condition2(lock);
+	condLeader = new Condition(lock);
+	condAssist = new Condition(lock);
+	condPeople = new Condition(lock);
 	toBoat = new Communicator();
 	onOahu = new Communicator();
 	onMolokai = new Communicator();
