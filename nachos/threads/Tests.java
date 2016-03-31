@@ -5,7 +5,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import nachos.machine.Lib;
+import nachos.machine.Machine;
 import nachos.threads.KThread;
+import nachos.threads.PriorityScheduler;
 /**
  * A tester class for various tasks of this project.
  */
@@ -15,7 +17,7 @@ public class Tests {
 	 * Expected concurrency, so use synchronized keyword in this file.
 	 * As it won't run in the final test, even getting grep'd is fine.
 	 */
-	public List<Integer> msg = Collections.synchronizedList(new LinkedList<Integer> ());
+	public SynchList msg = new SynchList();
 	/**
 	 * Tester for KThread.join().
 	 * Generates 2*n threads, n of them joining another n threads
@@ -24,48 +26,49 @@ public class Tests {
 	 */
 	public String testJoin(final int n) {
 		List<KThread> tlist = new LinkedList<KThread> ();
+		List<KThread> joinList = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
 			tlist.add(new KThread(new Runnable() {
 				@Override
 				public void run() {
-					synchronized(msg) {
 					msg.add(thisId + 1);
-					}
 				}
 			}).setName("Starter #" + Integer.toString(thisId)));
 		}
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
-			KThread toJoin = tlist.get(thisId);
-			tlist.add(new KThread(new Runnable() {
+			final KThread toJoin = tlist.get(thisId);
+			KThread curThread = new KThread(new Runnable() {
 				@Override
 				public void run() {
 					toJoin.join();
-					synchronized(msg) {
 					msg.add(-thisId - 1);}
-				}
-			}).setName("Joiner #" + Integer.toString(thisId)));
+			}).setName("Joiner #" + Integer.toString(thisId));
+			tlist.add(curThread);
+			joinList.add(curThread);
 		}
 		
 		Collections.shuffle(tlist);
-		
-		for (int i = 0; i < 2 * n; i++) 
-			tlist.get(i).fork();
 		for (int i = 0; i < 2 * n; i++) {
-			System.out.println(i);
-			tlist.get(i).join();
+			Lib.assertTrue(tlist.get(i).getTCB() != null);
+			tlist.get(i).fork();
 		}
-		synchronized(msg) {
-			int len = msg.size();
-			boolean[] used = new boolean[n + 1];
-			for (int i = 0; i < len; i++) {
-				int num = msg.get(i);
+		for (int i = 0; i < n; i++)
+			joinList.get(i).join();
+			
+		boolean[] used = new boolean[n + 1];
+		int num = 0;
+		for (int i = 0; i < 2 * n; i++) {
+				Object ret = msg.removeFirstNoWait();
+				Lib.assertTrue(ret != null);
+				System.out.println(ret);
+				num = (Integer) ret;
 				if (num > 0)
 					if (used[num]) return "Duplicate Entry"; else used[num] = true;
 				if (num < 0)
 					if (!used[-num]) return "Join before thread stops"; else used[-num] = false;
-			}
+			
 		}
 		return "KThread.Join Succeed N = " + Integer.toString(n);
 	}
@@ -86,41 +89,51 @@ public class Tests {
 			KThread t = new KThread(new Runnable() {
 				@Override
 				public void run() {
+                    boolean intStatus = Machine.interrupt().disable();
 					lock.acquire();
 					cond.wake();
-					synchronized(msg) {
-						msg.add(1);
-					}
+					msg.add(1);
 					lock.release();
+                    Machine.interrupt().restore(intStatus);
 				}
-			}).setName("(cond1) sleeper #" + Integer.toString(thisId));
+			}).setName("(cond1) waker #" + Integer.toString(thisId));
+			boolean state = Machine.interrupt().disable();
+			ThreadedKernel.scheduler.setPriority(t, 2);
+			Machine.interrupt().restore(state);
 			tlist.add(t);
 			joinList.add(t);
-			tlist.add(new KThread(new Runnable() {
+			KThread s = new KThread(new Runnable() {
 				@Override
 				public void run() {
+                    boolean intStatus = Machine.interrupt().disable();
 					lock.acquire();
 					cond.sleep();
-					synchronized(msg) {
-						msg.add(-1);
-					}
+					msg.add(-1);
 					lock.release();
+                    Machine.interrupt().restore(intStatus);
 				}
-			}).setName("(cond1) waker #" + Integer.toString(thisId)));
+			}).setName("(cond1) sleeper #" + Integer.toString(thisId));
+			state = Machine.interrupt().disable();
+			ThreadedKernel.scheduler.setPriority(s, 3);
+			Machine.interrupt().restore(state);
+			tlist.add(s);
 		}
 		Collections.shuffle(tlist);
-		for (int i = 0; i < 2 * n; i++) 
+		for (int i = 0; i < 2 * n; i++) {
+			Lib.assertTrue(tlist.get(i).getTCB() != null);
 			tlist.get(i).fork();
-		for (int i = 0; i < n; i++)
-			joinList.get(i).join();
-		int prefix = 0;
-		synchronized(msg) {
-			int len = msg.size();
-			for (int i = 0; i < len; i++) {
-				prefix += msg.get(i);
-				if (prefix < 0) return "Too many threads awoken from wake calls";
-			}
 		}
+        for (int i = 0; i < n; i++){
+            joinList.get(i).join();
+        }
+        Integer prefix = 0;
+		while (true) {
+            Object o = msg.removeFirstNoWait();
+            if (o == null) break;
+            prefix  += (Integer) o;
+            if (prefix < 0)
+                return "Too many threads awoken from wake calls";
+        }
 		return "Condition Variable Test 1 Succeed N = " + Integer.toString(n)
 			+ " # of threads not woke up = " + prefix;
 	}
@@ -133,9 +146,10 @@ public class Tests {
 	 * This is currently scrapped; Wait until we make sure WaitUntil() works.
 	 */
 	public String testCond2(int n) {
-		return "Conditonal Variable Test 2 currently disabled";
+		//return "Conditonal Variable Test 2 currently disabled";
 		//TBD: if the RRS is in Chaos, this auto returns
 		//if () return "(cond2) No test under this condition";
+		return "Cond2 test currently disabled";
 		/*
 		LinkedList<Lock> locks = new LinkedList<Lock> ();
 		LinkedList<Condition2> conds = new LinkedList<Condition2> ();
@@ -149,6 +163,7 @@ public class Tests {
 				public void run() {
 					if (thisId != 0) {
 						int x = thisId - 1;
+						ThreadedKernel.alarm.waitUntil(10000 * x);
 						locks.get(x).acquire();
 						conds.get(x).sleep();
 						locks.get(x).release();
@@ -163,16 +178,21 @@ public class Tests {
 				}
 			}).setName("{cond2) Thread #" + Integer.toString(i)));
 		}
-		for (int i = n-1; i > 0; i--) threads.get(i).fork();
-		locks.get(n-1).acquire();
-		conds.get(n-1).sleep();
-		locks.get(n-1).release();
-		synchronized(msg) {
-			if (msg.size() != n) return "Wrong message queue size";
-			for (int i = 0; i < n; i++)
-				if (msg.get(i) != i) return "Wrong order at " + Integer.toString(i);
+		for (int i = 0; i < n; i++) {
+			Lib.assertTrue(threads.get(i).getTCB() != null);
+			threads.get(i).fork();
 		}
-		return "Conditional Variable Test 2 passed, N = " + Integer.toString(n);
+		//locks.get(n-1).acquire();
+		//conds.get(n-1).sleep();
+		//locks.get(n-1).release();
+		ThreadedKernel.alarm.waitUntil(100000);
+		synchronized(msg) {
+			//if (msg.size() != n) return "Wrong message queue size";
+			for (int i = 0; i < msg.size(); i++)
+				if (msg.get(i) != i) return "Wrong order at " + Integer.toString(i);
+			return "Conditional Variable Test 2 passed, Returned Message size = " + Integer.toString(msg.size())
+			+ ", N = " + Integer.toString(n);
+		}
 		*/
 	}
 	/**
