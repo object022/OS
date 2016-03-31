@@ -26,8 +26,8 @@ public class Alarm {
 		}
 		@Override
 		public int compareTo(AlarmItem o) {
-			if (this.time < o.time) return 1;
-			if (this.time > o.time) return -1;
+			if (this.time < o.time) return -1;
+			if (this.time > o.time) return 1;
 			return 0;
 		}
 	}
@@ -81,6 +81,6 @@ public class Alarm {
 	}
     
     public static void selfTest() {
-    	System.out.println(new Tests().testAlarm(50, 200));
+    	System.out.println(new Tests().testAlarm(50, 2000));
     }
 }
