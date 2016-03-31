@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import nachos.machine.Lib;
+import nachos.machine.Machine;
 import nachos.threads.KThread;
 /**
  * A tester class for various tasks of this project.
@@ -168,16 +169,6 @@ public class Tests {
 	}
 
 	/**
-	 * Testing the Alarm class.
-	 * We generate a lot of calls to waitUntil() and see if the condition specified in the 
-	 * problem statement is fulfilled. Also see if it acts correctly if the thread is woke 
-	 * up by another conditional variable before time up.
-	 * Requires using the autograder event handler to test the optimality constraint.
-	 */
-	public String testAlarm() {
-		return null;
-	}
-	/**
 	 * Testing the Conditon2 synch as well as the Communicator class.
 	 * Generate N speakers and listeners and they should form a queue.
 	 */
@@ -303,6 +294,34 @@ public class Tests {
 		return "Communicator Test 3 passed, N = " + n;
 	}
 	/**
+	 * Testing the Alarm class.
+	 */
+	public String testAlarm(int n, int interval) {
+		LinkedList<KThread> tlist = new LinkedList<KThread> ();
+		for (int i = 0; i < n; i++) {
+			final int thisId = i;
+			tlist.add(new KThread(new Runnable() {
+				@Override
+				public void run() {
+					ThreadedKernel.alarm.waitUntil(interval * thisId);
+					msg.add(Machine.timer().getTime());
+				}
+			}).setName("(alarm) #" + i));
+		}
+		Collections.shuffle(tlist);
+		for (int i = 0; i < n; i++) tlist.get(i).fork();
+		for (int i = 0 ;i < n; i++) tlist.get(i).join();
+		while (true) {
+			Object o = msg.removeFirstNoWait();
+			if (o == null) break;
+			System.out.println(o);
+		}
+		return "Alarm Test passed, N = " + n + " Int = " + interval;
+	}
+	/**
 	 * Testing the Boat class - Moved to Boat.selfTest()
+	 */
+	/**
+	 * Testing the PriorityScheduler - Done by Andy Wan
 	 */
 }

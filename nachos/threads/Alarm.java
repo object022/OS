@@ -79,4 +79,8 @@ public class Alarm {
 	KThread.sleep();
 	Machine.interrupt().restore(intStatus);
 	}
+    
+    public static void selfTest() {
+    	System.out.println(new Tests().testAlarm(50, 200));
+    }
 }
