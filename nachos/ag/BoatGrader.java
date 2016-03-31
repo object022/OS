@@ -1,164 +1,184 @@
 package nachos.ag;
 
-public class BoatGrader {
+import nachos.threads.Boat;
+import nachos.threads.KThread;
+import nachos.machine.Lib;
 
-    /**
-     * BoatGrader consists of functions to be called to show that
-     * your solution is properly synchronized. This version simply
-     * prints messages to standard out, so that you can watch it.
-     * You cannot submit this file, as we will be using our own
-     * version of it during grading.
+/**
+ * Boat Grader
+ * 
+ * @author crowwork
+ */
+public class BoatGrader extends BasicTestGrader {
 
-     * Note that this file includes all possible variants of how
-     * someone can get from one island to another. Inclusion in
-     * this class does not imply that any of the indicated actions
-     * are a good idea or even allowed.
-     */
-	int childOnOahu = 0, childOnMolokai = 0, 
-		adultOnOahu = 0, adultOnMolokai = 0,
-		peopleOnBoat = 0;
-	int verbosity = 0;
-	boolean boatPos = false, hasError = false; 
-	//False at Oahu, True at Molokai
-	//NEW ADDITION FOR 2014
-	//MUST BE CALLED AT THE START OF CHILDITINERARY!
-	public void error(String note) {
-		if (hasError) return;
-		System.out.println("Error: " + note);
-		hasError = true;
-	}
-	public synchronized void initializeChild(){
-		if (verbosity > 0)
-		System.out.println("A child has forked.");
-		childOnOahu += 1;
-	}
-	
-	//NEW ADDITION FOR 2014
-	//MUST BE CALLED AT THE START OF ADULTITINERARY!
-	public synchronized void initializeAdult(){
-		if (verbosity > 0)
-		System.out.println("An adult as forked.");
-		adultOnOahu += 1;
+	/**
+	 * BoatGrader consists of functions to be called to show that your solution
+	 * is properly synchronized. This version simply prints messages to standard
+	 * out, so that you can watch it. You cannot submit this file, as we will be
+	 * using our own version of it during grading.
+	 * 
+	 * Note that this file includes all possible variants of how someone can get
+	 * from one island to another. Inclusion in this class does not imply that
+	 * any of the indicated actions are a good idea or even allowed.
+	 */
+	void run() {
+
+		final int adults = getIntegerArgument("adults");
+		final int children = getIntegerArgument("children");
+		Lib.assertTrue(adults >= 0 && children >= 0,
+				"number can not be negative");
+
+		this.startTest(adults, children);
+		AllCrossed();
+		done();
 	}
 
-    /* ChildRowToMolokai should be called when a child pilots the boat
-       from Oahu to Molokai */
-    public synchronized void ChildRowToMolokai() {
-    	if (verbosity > 0)
-    	System.out.println("**Child rowing to Molokai.");
-    	childOnOahu -= 1;
-    	childOnMolokai += 1;
-    	if (boatPos) {
-    		// Different Side, Someone must be on the boat
-    		if (peopleOnBoat == 0) error("Boat on Molokai when trying to start at Oahu");
-    		peopleOnBoat = 1;
-    		boatPos = false;
-    	} else {
-    	if (peopleOnBoat != 0) error("Row after others on boat");
-    	peopleOnBoat = 1;
-    	}
-    }
+	public void startTest(int adults, int children) {
+		adultsOahu = adults;
+		childrenOahu = children;
+		adultsMolokai = childrenMolokai = 0;
 
-    /* ChildRowToOahu should be called when a child pilots the boat
-       from Molokai to Oahu*/
-    public synchronized void ChildRowToOahu() {
-    if (verbosity > 0)
-    	System.out.println("**Child rowing to Oahu.");
-	childOnMolokai -= 1;
-	childOnOahu += 1;
-	if (!boatPos) {
-		// Different Side, Someone must be on the boat
-		if (peopleOnBoat == 0) error("Boat on Molokai when trying to start at Oahu");
-		peopleOnBoat = 1;
-		boatPos = true;
-	} else {
-	if (peopleOnBoat != 0) error("Row after others on boat");
-	peopleOnBoat = 1;
+		Boat.begin(adultsOahu, childrenOahu, this);
 	}
-    }
 
-    /* ChildRideToMolokai should be called when a child not piloting
-       the boat disembarks on Molokai */
-    public synchronized void ChildRideToMolokai() {
-	if (verbosity > 0)
-    	System.out.println("**Child arrived on Molokai as a passenger.");
-	childOnOahu -= 1;
-	childOnMolokai += 1;
-	if (boatPos) {
-		// Different Side, throw error
-		error("Can't ride to Molokai, boat is already there");
-	} else {
-	if (peopleOnBoat == 0) error("First ride before anyone on boat");
-	if (peopleOnBoat == 2) error("Not enough space");
-	peopleOnBoat = 2;
+	protected int adultsOahu, childrenOahu;
+	protected int adultsMolokai, childrenMolokai;
+
+	/**
+	 */
+	protected void check(boolean value, String msg) {
+		Lib.assertTrue(value, msg);
 	}
-	//Check if simulation ends
-	if (childOnOahu == 0)
-		if (adultOnOahu == 0)
-			System.out.println("All people landed on Molokai - Process may end");
-    }
 
-    /* ChildRideToOahu should be called when a child not piloting
-       the boat disembarks on Oahu */
-    public synchronized void ChildRideToOahu() {
-	if (verbosity > 0)
-    	System.out.println("**Child arrived on Oahu as a passenger.");
-	childOnMolokai -= 1;
-	childOnOahu += 1;
-	if (!boatPos) {
-		// Different Side, throw error
-		error("Can't ride to Oahu, boat is already there");
-	} else {
-	if (peopleOnBoat == 0) error("First ride before anyone on boat");
-	if (peopleOnBoat == 2) error("Not enough space");
-	peopleOnBoat = 2;
+	/**
+	 * all the passenger has been crossed
+	 */
+	private void AllCrossed() {
+		check(adultsOahu == 0, "there are still " + adultsOahu
+				+ " adults in Oahu");
+		check(childrenOahu == 0, "there are still " + childrenOahu
+				+ " children in Oahu");
 	}
-	if (childOnOahu == 0)
-		if (adultOnOahu == 0){
-			if (hasError)
-			System.out.println("Process ended with error present");
-			else
-			System.out.println("All people landed on Molokai - Process may end");
-		}
 
-    }
-
-    /* AdultRowToMolokai should be called when a adult pilots the boat
-       from Oahu to Molokai */
-    public synchronized void AdultRowToMolokai() {
-	if (verbosity > 0)
-    	System.out.println("**Adult rowing to Molokai.");
-	adultOnOahu -= 1;
-	adultOnMolokai += 1;
-	if (boatPos) {
-		// Different Side, Someone must be on the boat
-		if (peopleOnBoat == 0) error("Boat on Molokai when trying to start at Oahu");
-		peopleOnBoat = 2;
-		boatPos = false;
-	} else {
-	if (peopleOnBoat != 0) error("Row after others on boat");
-	peopleOnBoat = 2;
+	private void doYield() {
+		while (random.nextBoolean())
+			KThread.yield();
 	}
-    }
 
-    /* AdultRowToOahu should be called when a adult pilots the boat
-       from Molokai to Oahu */
-    public void AdultRowToOahu() {
-	System.out.println("**Adult rowing to Oahu.");
-	error("Prohibited Action");
-    }
+	/*
+	 * ChildRowToMolokai should be called when a child pilots the boat from Oahu
+	 * to Molokai
+	 */
+	public void ChildRowToMolokai() {
+		doYield();
+		check(childrenOahu > 0,
+				"no children in Oahu,invalid operation ChildRowToMolokai");
+		childrenOahu--;
+		childrenMolokai++;
+		// System.out.println("**Child rowing to Molokai.");
+	}
 
-    /* AdultRideToMolokai should be called when an adult not piloting
-       the boat disembarks on Molokai */
-    public void AdultRideToMolokai() {
-	System.out.println("**Adult arrived on Molokai as a passenger.");
-	error("Prohibited Action");
-    }
+	/*
+	 * ChildRowToOahu should be called when a child pilots the boat from Molokai
+	 * to Oahu
+	 */
+	public void ChildRowToOahu() {
+		doYield();
+		check(childrenMolokai > 0,
+				"no children in Oahu , invalid operation ChildRowToOahu");
+		childrenOahu++;
+		childrenMolokai--;
+		// System.out.println("**Child rowing to Oahu.");
+	}
 
-    /* AdultRideToOahu should be called when an adult not piloting
-       the boat disembarks on Oahu */
-    public void AdultRideToOahu() {
-	System.out.println("**Adult arrived on Oahu as a passenger.");
-	error("Prohibited Action");
-    }
+	/*
+	 * ChildRideToMolokai should be called when a child not piloting the boat
+	 * disembarks on Molokai
+	 */
+	public void ChildRideToMolokai() {
+		doYield();
+		check(childrenOahu > 0,
+				"no children in Molokai , invalid operation ChildRideToMolokai");
+		childrenOahu--;
+		childrenMolokai++;
+		// System.out.println("**Child arrived on Molokai as a passenger.");
+	}
+
+	/*
+	 * ChildRideToOahu should be called when a child not piloting the boat
+	 * disembarks on Oahu
+	 */
+	public void ChildRideToOahu() {
+		doYield();
+		check(childrenMolokai > 0,
+				"no children in Molokai, invalid operation ChildRideToOahu");
+		childrenOahu++;
+		childrenMolokai--;
+		// System.out.println("**Child arrived on Oahu as a passenger.");
+	}
+
+	/*
+	 * AdultRowToMolokai should be called when a adult pilots the boat from Oahu
+	 * to Molokai
+	 */
+	public void AdultRowToMolokai() {
+		doYield();
+		check(adultsOahu > 0,
+				" no adult in Oahu , invalid operation AdultRowToMolokai");
+		adultsOahu--;
+		adultsMolokai++;
+		// System.out.println("**Adult rowing to Molokai.");
+	}
+
+	/*
+	 * AdultRowToOahu should be called when a adult pilots the boat from Molokai
+	 * to Oahu
+	 */
+	public void AdultRowToOahu() {
+		doYield();
+		check(adultsMolokai > 0,
+				"no adult in Molokai , invalid operation AdultRowToOahu");
+		adultsOahu++;
+		adultsMolokai--;
+		// System.out.println("**Adult rowing to Oahu.");
+	}
+
+	/*
+	 * AdultRideToMolokai should be called when an adult not piloting the boat
+	 * disembarks on Molokai
+	 */
+	public void AdultRideToMolokai() {
+		Lib.assertNotReached("invalid operation AdultRideToMolokai");
+		// System.out.println("**Adult arrived on Molokai as a passenger.");
+	}
+
+	@Override
+	public void readyThread(KThread thread) {
+		if (thread == idleThread) {
+			++idleReadyCount;
+			if (idleReadyCount > 1000){
+				AllCrossed();
+				done();
+			}				
+		} else
+			idleReadyCount = 0;
+	}
+
+	/*
+	 * AdultRideToOahu should be called when an adult not piloting the boat
+	 * disembarks on Oahu
+	 */
+	public void AdultRideToOahu() {
+		Lib.assertNotReached("invalid operation AdultRideToOahu");
+		// System.out.println("**Adult arrived on Oahu as a passenger.");
+	}
+
+	@Override
+	public void setIdleThread(KThread thread) {
+		idleThread = thread;
+	}
+
+	KThread idleThread;
+	java.util.Random random = new java.util.Random();
+	private static int idleReadyCount = 0;
 }
