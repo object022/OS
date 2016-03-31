@@ -139,7 +139,6 @@ public class PriorityScheduler extends Scheduler {
             if (thread == null)
                 return;
             getThreadState(thread).waitForAccess(this);
-            ++ totalNodes;
         }
 
         public void acquire(KThread thread) {
@@ -154,17 +153,16 @@ public class PriorityScheduler extends Scheduler {
             ThreadState pick = pickNextThread();
  
             Lib.assertTrue( pick.ne.size() == 1 );
-            //Remove any thread that is holding this. (?????)
+            // Remove anybody that holds the queue currently
             while (!node.ne.isEmpty()) {
                 ThreadState curr = node.ne.getFirst();
                 curr.delPrev(node);
-                node.ne.remove(curr);
             }
-            while (!pick.pr.isEmpty()) {
-                ThreadState curr = pick.pr.getFirst();
-                pick.delPrev(curr);
-                pick.pr.remove(curr);
-            }
+            //?????
+            //while (!pick.pr.isEmpty()) {
+            //    ThreadState curr = pick.pr.getFirst();
+            //    pick.delPrev(curr);
+            //}
             //This thread(pick) now owns the lock(node)
             pick.acquire(this);
             return pick.thread;
@@ -177,20 +175,11 @@ public class PriorityScheduler extends Scheduler {
 	 * @return	the next thread that <tt>nextThread()</tt> would
 	 *		return.
 	 */
-        protected ThreadState pickNextThread() {
-            if (node.pr.isEmpty())
-                return null;
-            ThreadState ret = node.maxPrev();
-            while ( ret.ne.size() > 1 ){
-            	ThreadState cur = ret.ne.getFirst();
-            	if (cur == node)
-            		cur = ret.ne.get(1);
-            }
-            return ret;
-            /*
+        protected ThreadState pickNextThread() {  
             if (this.transferPriority)
                 return node.maxPrev();
             else {
+            	if (node.pr.isEmpty()) return null;
                 ThreadState ret = node.pr.getFirst();
                 for (Iterator<ThreadState> iter = node.pr.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
@@ -198,7 +187,6 @@ public class PriorityScheduler extends Scheduler {
                 }
                 return ret;
             }
-             */
         }
 	
         public void print() {
