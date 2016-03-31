@@ -144,6 +144,7 @@ public class PriorityScheduler extends Scheduler {
 
         public void acquire(KThread thread) {
             Lib.assertTrue(Machine.interrupt().disabled());
+            Lib.assertTrue(getThreadState(thread).ne.isEmpty());
             getThreadState(thread).acquire(this);
         }
 

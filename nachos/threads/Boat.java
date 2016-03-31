@@ -1,5 +1,6 @@
 package nachos.threads;
-import java.util.PriorityQueue;
+import java.util.Collections;
+import java.util.LinkedList;
 
 import nachos.ag.BoatGrader;
 import nachos.threads.PriorityScheduler.ThreadState;
@@ -66,28 +67,32 @@ public class Boat
     {
 	BoatGrader b = new BoatGrader();
 	
-	System.out.println("\n ***Testing Boats with only 2 children***");
-	begin(0, 2, b);
+	begin(50, 50, b);
 
     }
 
     public static Lock lock;
-    public static Condition condLeader, condAssist, condPeople;
-    public static Communicator toBoat, onOahu, onMolokai;
-    public static PriorityQueue queue;
-    public static int leaderVote = 0;
+    public static Condition2 condLeader, condAssist, condPeople;
+    public static Communicator toBoat, onOahu, onMolokai, cheat;
+    
+    //Cheating Info: When the PriorityQueue is correctly implemented, let begin have higher priority than
+    //Everything else. Then when we need to hear from cheat, yield instead.
+    
+    public static int leaderVote = 0, reported = 0; // how many people have reported themselves and are still on Oahu?
+    public static boolean forceEnter = false; // If no one is seen to report himself, the next coming person can't sleep
     public static void begin( int adults, int children, BoatGrader b )
     {
 	// Store the externally generated autograder in a class
 	// variable to be accessible by children.
 	bg = b;
 	lock = new Lock();
-	condLeader = new Condition(lock);
-	condAssist = new Condition(lock);
-	condPeople = new Condition(lock);
+	condLeader = new Condition2(lock);
+	condAssist = new Condition2(lock);
+	condPeople = new Condition2(lock);
 	toBoat = new Communicator();
 	onOahu = new Communicator();
 	onMolokai = new Communicator();
+	cheat = new Communicator();
 	// Instantiate global variables here
 	
 	// Create threads here. See section 3.4 of the Nachos for Java
@@ -106,16 +111,17 @@ public class Boat
 		}
 	};
 	
-	for (int i = 0; i < adults; i++){
-		KThread t = new KThread(runnableAdult).setName("Adult #" + i);
-		t.fork();
-		((ThreadState)t.schedulingState).setPriority(2);
-	}
+	LinkedList<KThread> tlist = new LinkedList<KThread> ();
+	for (int i = 0; i < adults; i++)
+		tlist.add(new KThread(runnableAdult).setName("Adult #" + i));
 	for (int i = 0; i < children; i++)
-		new KThread(runnableChildren).setName("Child #" + i).fork();
-
+		tlist.add(new KThread(runnableChildren).setName("Child #" + i));
+	Collections.shuffle(tlist);
+	for (int i = 0; i < tlist.size(); i++)
+		tlist.get(i).fork();
 	while (true) {
 		int msg = toBoat.listen();
+		//System.out.println("Boat: Receives message " + msg);
 		switch (msg) {
 		case 1: // Children arrives
 			children--;
@@ -126,74 +132,100 @@ public class Boat
 		case 0: // Leader on Molokai, waiting decision: THIS IS CHEATING
 			if ((children == 2) && (adults == 0)) // Assistant is already on Molokai
 				return;
+			//System.out.println("Boat: Leader should pass, people remaining = " + children  + " " + adults);
+			cheat.speak(0);
 		}
 	}
 	
     }
     
 
+    static int aid = 0;
     static void AdultItinerary()
     {
 	bg.initializeAdult(); //Required for autograder interface. Must be the first thing called.
 	//DO NOT PUT ANYTHING ABOVE THIS LINE. 
-
-	lock.acquire();
-	condPeople.sleep();
-	lock.release();
 	/*
-	 * wake by leader - row to Molokai - wake assistant
+	 * wake up - wake leader - row to Molokai - wake assistant
 	 */
+	lock.acquire();
+	reported++;
+	if (!forceEnter)
+	condPeople.sleep();
+
+	int id = aid++; // only for debugging purposes
+
+	//System.out.println("Adult #" + id + " Entering - forceEnter = " + forceEnter);
+	forceEnter = false;
+	reported--;
+	//System.out.println("Adult #" + id + " wake the leader");
+	condLeader.wake();
+	lock.release();
 	onOahu.speak(-1);
+	//System.out.println("Adult #" + id + " go to Molokai");
 	bg.AdultRowToMolokai();
 	toBoat.speak(-1);
 	lock.acquire();
+	//System.out.println("Adult #" + id + " wake the assistant to row back");
 	condAssist.wake();
 	lock.release();
     }
-
+    static int cid = 0;
     static void ChildItinerary()
     {
 	bg.initializeChild(); //Required for autograder interface. Must be the first thing called.
 	//DO NOT PUT ANYTHING ABOVE THIS LINE. 
-
+	
 	//Electing the leader and assistant
+	//Decide the ID
+	int id = -1;
 	lock.acquire();
 	int role = leaderVote;
 	if (role < 2) leaderVote++;
+	else id = cid++;
 	lock.release();
 	
 	switch (role) {
 	case 0: // Leader
-		//Take the assistant to the other side, everybody else sleeping on CondPeople
 		bg.ChildRowToMolokai();
 		onOahu.speak(0);
 		onMolokai.listen();
-		toBoat.speak(0); 
-		//Be warned, we're cheating here! Boat will decide if leader should continue
+		
 		lock.acquire();
-		condLeader.sleep();
+		if (reported == 0) {
+			toBoat.speak(0);
+			cheat.listen();
+		}
 		lock.release();
-		//End of cheat
+		
 		bg.ChildRowToOahu();
+		//Wake up the first people
+		lock.acquire();
+		if (reported == 0) forceEnter = true;
+		else condPeople.wake();
+		lock.release();
+		
 		//Main Loop
 		while (true) {
-			lock.acquire();
-			condPeople.wake();
-			lock.release();
 			int type = onOahu.listen();
 			switch (type) {
 			case 1: // Children
 				/*
 				 * Row to Molokai - Wait children to ride - Row to Oahu
 				 */
+				//System.out.println("Leader: rowing to Molokai and wait");
 				bg.ChildRowToMolokai();
 				onOahu.speak(0);
-				toBoat.speak(0); 
-				// Be warned, we're cheating here! Boat will decide if leader should continue
+				onOahu.listen();
+				
 				lock.acquire();
-				condLeader.sleep();
+				if (reported == 0) {
+					toBoat.speak(0);
+					cheat.listen();
+				}
 				lock.release();
-				//End of cheat
+				
+				//System.out.println("Leader: rowing back to Oahu");
 				bg.ChildRowToOahu();
 				break;
 			case -1: // Adult
@@ -203,19 +235,33 @@ public class Boat
 				lock.acquire();
 				condLeader.sleep();
 				lock.release();
+				//System.out.println("Leader: waiting assistant to row back");
 				onOahu.listen();
+				//System.out.println("Leader: rowing to Molokai to take assistant there");
 				bg.ChildRowToMolokai();
 				onOahu.speak(0);
 				onMolokai.listen();
-				toBoat.speak(0); 
-				// Be warned, we're cheating here! Boat will decide if leader should continue
+				
+				
 				lock.acquire();
-				condLeader.sleep();
+				if (reported == 0) {
+					toBoat.speak(0);
+					cheat.listen();
+				}
 				lock.release();
-				//End of cheat
+				
+				//System.out.println("Leader: rowing back to Oahu");
+				
 				bg.ChildRowToOahu();
 			}
+			
+			//System.out.println("Leader finished, type = " + type);
+			
 			lock.acquire();
+			//System.out.println("People waiting to wake up: " + reported);
+			if (reported == 0) 
+				forceEnter = true;
+			else condPeople.wake();
 			condLeader.sleep();
 			lock.release();
 		}
@@ -232,40 +278,40 @@ public class Boat
 		lock.acquire();
 		condAssist.sleep();
 		lock.release();
+		//System.out.println("Assistant: summoned by adult, rowing to Oahu");
 		bg.ChildRowToOahu();
 		lock.acquire();
+		//System.out.println("Assistant: waking the leader");
 		condLeader.wake();
 		lock.release();
 		onOahu.speak(0);
 		onOahu.listen();
+		//System.out.println("Assistant: rowing to Molokai and wait");
 		bg.ChildRideToMolokai();
 		onMolokai.speak(0);
 		}
 	case 2: // Normal
 		/*
-		 * Wait leader to wake - Wait leader to row to Molokai - ride to Molokai
+		 * Wait - wake up leader - Wait leader to row to Molokai - ride to Molokai
 		 */
 		lock.acquire();
+		reported++;
+		if (!forceEnter)
 		condPeople.sleep();
+		//System.out.println("Child #" + id + ": Entering - forceEnter = " + forceEnter);
+		forceEnter = false;
+		reported--;
+		//System.out.println("Child #" + id + ": wake the leader");
+		condLeader.wake();
 		lock.release();
 		onOahu.speak(1);
 		onOahu.listen();
+		//System.out.println("Child #" + id + ": Riding to Molokai");
 		bg.ChildRideToMolokai();
 		toBoat.speak(1);
+		onOahu.speak(2);
 	}
     }
 
-    static void SampleItinerary()
-    {
-	// Please note that this isn't a valid solution (you can't fit
-	// all of them on the boat). Please also note that you may not
-	// have a single thread calculate a solution and then just play
-	// it back at the autograder -- you will be caught.
-	System.out.println("\n ***Everyone piles on the boat and goes to Molokai***");
-	bg.AdultRowToMolokai();
-	bg.ChildRideToMolokai();
-	bg.AdultRideToMolokai();
-	bg.ChildRideToMolokai();
-    }
     
 }
