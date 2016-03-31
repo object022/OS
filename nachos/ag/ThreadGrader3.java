@@ -19,7 +19,7 @@ import nachos.threads.ThreadedKernel;
 public class ThreadGrader3 extends BasicTestGrader {
 	static StringBuffer buf = null;
 
-	void run() {
+	public void run() {
 		assertTrue(ThreadedKernel.scheduler instanceof RoundRobinScheduler,
 				"this test requires roundrobin scheduler");
 

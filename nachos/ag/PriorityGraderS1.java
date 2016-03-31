@@ -257,9 +257,9 @@ public class PriorityGraderS1 extends BasicTestGrader {
 	public void run() {
 		assertCorrectScheduler();
 
-		final int threads = getIntegerArgument("threads");
-		final int times = getIntegerArgument("times");
-		final int locks = getIntegerArgument("locks");
+		final int threads = 20;
+		final int times = 100;
+		final int locks = 15;
 
 		assertTrue(threads > 0, "invalid argument: number of threads");
 		assertTrue(times > 0, "invalid argument: times of test");
