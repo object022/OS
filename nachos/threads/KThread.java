@@ -68,6 +68,10 @@ public class KThread {
     public KThread(Runnable target) {
 	this();
 	this.target = target;
+	
+	boolean intStatus = Machine.interrupt().disable();
+	waitQueue.acquire(this);
+	Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -174,8 +178,6 @@ public class KThread {
 	Lib.assertTrue(this == currentThread);
 
 	restoreState();
-	
-	waitQueue.acquire(this);
 
 	Machine.interrupt().enable();
 	
