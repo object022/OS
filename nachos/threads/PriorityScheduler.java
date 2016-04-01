@@ -220,12 +220,13 @@ public class PriorityScheduler extends Scheduler {
     	public boolean donatePriority;
         public ThreadState(KThread thread) {
             this.thread = thread;
-            setPriority(priorityDefault);
             nodeId = totalNodes++;
+            setPriority(priorityDefault);
             donatePriority = true;
         }
         public ThreadState(PriorityQueue queue) {
             this.queue = queue;
+            nodeId = totalNodes++;
             setPriority(priorityMinimum - 1);
             donatePriority = queue.transferPriority;
         }
@@ -233,7 +234,7 @@ public class PriorityScheduler extends Scheduler {
         public int currentMax() {
             int ret = priority;
             if (!pr.isEmpty()) ret = Math.max(ret, maxPrev().current);
-                return ret;
+            return ret;
         }
         
         public ThreadState maxPrev() {
@@ -280,25 +281,31 @@ public class PriorityScheduler extends Scheduler {
 	
         public void addPrev(ThreadState node) {
         	if (node.donatePriority && this.donatePriority)
-        	System.out.println("Before: " + node + "    " + this);
-            pr.add(node);
-            node.ne.add(this);
+        	System.out.println("(A)Bef:" + node + "    " + this);
+            boolean res1 = pr.add(node);
+            boolean res2 = node.ne.add(this);
+            
+            Lib.assertTrue(res1 == res2);
+            Lib.assertTrue(res1);
             update_local();
             
             if (node.donatePriority && this.donatePriority)
-            	System.out.println("After : " + node + " -> " + this);
+            	System.out.println("(A)Aft:" + node + " -> " + this);
         }
         
         public void delPrev(ThreadState node) {
         	if (node.donatePriority && this.donatePriority)
-        	System.out.println("Before:" + node + " -> " + this);
+        	System.out.println("(D)Bef:" + node + " -> " + this);
             
-            pr.remove(node);
-            node.ne.remove(this);
+            boolean res1 = pr.remove(node);
+            boolean res2 = node.ne.remove(this);
+            
+            Lib.assertTrue(res1 == res2);
+            Lib.assertTrue(res1);
             update_local();
             
             if (node.donatePriority && this.donatePriority)
-            System.out.println("After :" + node + "    " + this);
+            System.out.println("(D)Aft:" + node + "    " + this);
             
         }
         @Override
@@ -335,7 +342,9 @@ public class PriorityScheduler extends Scheduler {
         public void setPriority(int priority) {
             if (this.priority == priority)
                 return;
-            System.out.println(this.priority + " -> " + priority + ":" + this);
+            if (this.priority == 0)
+            	System.out.println("Init " + priority + ":" + this);
+            else System.out.println(this.priority + " -> " + priority + ":" + this);
             this.priority = priority;
             update_local();
         }
@@ -369,7 +378,8 @@ public class PriorityScheduler extends Scheduler {
 	 */
         public void acquire(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
-            tar.delPrev(this);
+            if (tar.pr.contains(this))
+            	tar.delPrev(this);
             this.addPrev(tar);
         }
 
