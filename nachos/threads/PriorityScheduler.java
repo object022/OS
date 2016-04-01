@@ -165,6 +165,7 @@ public class PriorityScheduler extends Scheduler {
             //}
             //This thread(pick) now owns the lock(node)
             pick.acquire(this);
+            System.out.println("nextThread calls on " + node + " returning " + pick);
             return pick.thread;
         }
 
@@ -259,6 +260,7 @@ public class PriorityScheduler extends Scheduler {
         	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
+            	System.out.println(this + " Priority -> " + newMax);
                 current = newMax;
             	for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
@@ -271,6 +273,7 @@ public class PriorityScheduler extends Scheduler {
         	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
+            	System.out.println(this + " Priority -> " + newMax);
                 current = newMax;
                 for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
@@ -313,7 +316,9 @@ public class PriorityScheduler extends Scheduler {
         	if (thread != null)
         	return "[c:" + current + " i:" + priority + "] (T)"  + thread;
         	else
+        		if (donatePriority)
         		return "[c:" + current + " i:" + priority + "] (Q)" + nodeId;
+        		else return "[No donation] (Q)" + nodeId;
         }
 	
 	/**
@@ -357,7 +362,9 @@ public class PriorityScheduler extends Scheduler {
             	System.out.println("Init " + priority + ":" + this);
             else System.out.println(this.priority + " -> " + priority + ":" + this);
             this.priority = priority;
-            update_local();
+            if (donatePriority)
+            	update_local();
+            else this.current = this.priority;
         }
 
 	/**
@@ -375,6 +382,8 @@ public class PriorityScheduler extends Scheduler {
         public void waitForAccess(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
             tar.addPrev(this);
+            
+            System.out.println("WaitForAccess: " + this + " is now waiting " + waitQueue.node);
         }
 
 	/**
@@ -392,6 +401,8 @@ public class PriorityScheduler extends Scheduler {
             if (tar.pr.contains(this))
             	tar.delPrev(this);
             this.addPrev(tar);
+            System.out.println("Acquire: " + this + " now acquires " + waitQueue.node);
+
         }
 
         int nodeId, current;
