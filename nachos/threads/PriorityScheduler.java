@@ -153,8 +153,8 @@ public class PriorityScheduler extends Scheduler {
             while (!node.ne.isEmpty()) {
                 ThreadState curr = node.ne.getFirst();
                 curr.delPrev(node);
-                if (this.transferPriority)
-                System.out.println(node + " removes " + curr + " from its usage");
+                //if (this.transferPriority)
+                //System.out.println(node + " removes " + curr + " from its usage");
             }
             
             
@@ -171,8 +171,8 @@ public class PriorityScheduler extends Scheduler {
             //}
             //This thread(pick) now owns the lock(node)
             pick.acquire(this);
-            if (this.transferPriority)
-            System.out.println("nextThread calls on " + node + " returning " + pick);
+            //if (this.transferPriority)
+            //System.out.println("nextThread calls on " + node + " returning " + pick);
             return pick.thread;
         }
 
@@ -351,10 +351,10 @@ public class PriorityScheduler extends Scheduler {
         }
         public int getEffectivePriority() {
         	
-        	int temp = recursivePrev();
-        	if (temp != current) System.out.println("ERROR at " + this + " Calculated " + temp);
-            return temp;
-        	//return current;
+        	//int temp = recursivePrev();
+        	//if (temp != current) System.out.println("ERROR at " + this + " Calculated " + temp);
+            //return temp;
+        	return current;
         }
 
 	/**
@@ -365,9 +365,9 @@ public class PriorityScheduler extends Scheduler {
         public void setPriority(int priority) {
             if (this.priority == priority)
                 return;
-            if (this.priority == 0)
-            	System.out.println("Init " + priority + ":" + this);
-            else System.out.println(this.priority + " -> " + priority + ":" + this);
+            //if (this.priority == 0)
+            //	System.out.println("Init " + priority + ":" + this);
+            //else System.out.println(this.priority + " -> " + priority + ":" + this);
             this.priority = priority;
             if (donatePriority)
             	update_local();
@@ -389,8 +389,8 @@ public class PriorityScheduler extends Scheduler {
         public void waitForAccess(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
             tar.addPrev(this);
-            if (waitQueue.transferPriority)
-            System.out.println("WaitForAccess: " + this + " is now waiting " + waitQueue.node);
+            //if (waitQueue.transferPriority)
+            //System.out.println("WaitForAccess: " + this + " is now waiting " + waitQueue.node);
         }
 
 	/**
@@ -406,16 +406,16 @@ public class PriorityScheduler extends Scheduler {
         public void acquire(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
             if (tar.pr.contains(this)) {
-            	if (waitQueue.transferPriority)
-            	System.out.println("Acquire: " + this + " no longer waits " + tar);
+            	//if (waitQueue.transferPriority)
+            	//System.out.println("Acquire: " + this + " no longer waits " + tar);
             	tar.delPrev(this);
             }
             
             Lib.assertTrue(tar.ne.isEmpty());
             
             this.addPrev(tar);
-            if (waitQueue.transferPriority)
-            System.out.println("Acquire: " + this + " now acquires " + waitQueue.node);
+            //if (waitQueue.transferPriority)
+            //System.out.println("Acquire: " + this + " now acquires " + waitQueue.node);
 
         }
 

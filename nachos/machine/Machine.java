@@ -360,7 +360,7 @@ public final class Machine {
     private static NetworkLink networkLink = null;
     private static AutoGrader autoGrader = null;
 
-    private static String autoGraderClassName = "nachos.ag.PriorityGraderS1";
+    private static String autoGraderClassName = "nachos.ag.AutoGrader";
 
     /**
      * Return the name of the shell program that a user-programming kernel
