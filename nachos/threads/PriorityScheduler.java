@@ -148,11 +148,7 @@ public class PriorityScheduler extends Scheduler {
 
         public KThread nextThread() {
             Lib.assertTrue(Machine.interrupt().disabled());
-            if (node.pr.isEmpty())
-                return null;
-            ThreadState pick = pickNextThread();
- 
-            Lib.assertTrue( pick.ne.size() == 1 );
+            
             // Remove anybody that holds the queue currently
             while (!node.ne.isEmpty()) {
                 ThreadState curr = node.ne.getFirst();
@@ -160,6 +156,14 @@ public class PriorityScheduler extends Scheduler {
                 if (this.transferPriority)
                 System.out.println(node + " removes " + curr + " from its usage");
             }
+            
+            
+            if (node.pr.isEmpty())
+                return null;
+            ThreadState pick = pickNextThread();
+ 
+            Lib.assertTrue( pick.ne.size() == 1 );
+
             //?????
             //while (!pick.pr.isEmpty()) {
             //    ThreadState curr = pick.pr.getFirst();
