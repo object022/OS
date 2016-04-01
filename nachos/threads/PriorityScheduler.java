@@ -157,6 +157,8 @@ public class PriorityScheduler extends Scheduler {
             while (!node.ne.isEmpty()) {
                 ThreadState curr = node.ne.getFirst();
                 curr.delPrev(node);
+                if (this.transferPriority)
+                System.out.println(node + " removes " + curr + " from its usage");
             }
             //?????
             //while (!pick.pr.isEmpty()) {
@@ -165,6 +167,7 @@ public class PriorityScheduler extends Scheduler {
             //}
             //This thread(pick) now owns the lock(node)
             pick.acquire(this);
+            if (this.transferPriority)
             System.out.println("nextThread calls on " + node + " returning " + pick);
             return pick.thread;
         }
@@ -260,7 +263,7 @@ public class PriorityScheduler extends Scheduler {
         	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
-            	System.out.println(this + " Priority -> " + newMax);
+            	//System.out.println(this + " Priority -> " + newMax);
                 current = newMax;
             	for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
@@ -273,7 +276,7 @@ public class PriorityScheduler extends Scheduler {
         	if (!donatePriority) return;
             int newMax = currentMax();
             if (newMax != current) {
-            	System.out.println(this + " Priority -> " + newMax);
+            	//System.out.println(this + " Priority -> " + newMax);
                 current = newMax;
                 for (Iterator<ThreadState> iter = ne.iterator();iter.hasNext();) {
                     ThreadState cur = iter.next();
@@ -283,8 +286,8 @@ public class PriorityScheduler extends Scheduler {
         }
 	
         public void addPrev(ThreadState node) {
-        	if (node.donatePriority && this.donatePriority)
-        	System.out.println("(A)Bef:" + node + "    " + this);
+        	//if (node.donatePriority && this.donatePriority)
+        	//System.out.println("(A)Bef:" + node + "    " + this);
             boolean res1 = pr.add(node);
             boolean res2 = node.ne.add(this);
             
@@ -292,13 +295,13 @@ public class PriorityScheduler extends Scheduler {
             Lib.assertTrue(res1);
             update_local();
             
-            if (node.donatePriority && this.donatePriority)
-            	System.out.println("(A)Aft:" + node + " -> " + this);
+           // if (node.donatePriority && this.donatePriority)
+            //	System.out.println("(A)Aft:" + node + " -> " + this);
         }
         
         public void delPrev(ThreadState node) {
-        	if (node.donatePriority && this.donatePriority)
-        	System.out.println("(D)Bef:" + node + " -> " + this);
+        	//if (node.donatePriority && this.donatePriority)
+        	//System.out.println("(D)Bef:" + node + " -> " + this);
             
             boolean res1 = pr.remove(node);
             boolean res2 = node.ne.remove(this);
@@ -307,8 +310,8 @@ public class PriorityScheduler extends Scheduler {
             Lib.assertTrue(res1);
             update_local();
             
-            if (node.donatePriority && this.donatePriority)
-            System.out.println("(D)Aft:" + node + "    " + this);
+           // if (node.donatePriority && this.donatePriority)
+            //System.out.println("(D)Aft:" + node + "    " + this);
             
         }
         @Override
@@ -382,7 +385,7 @@ public class PriorityScheduler extends Scheduler {
         public void waitForAccess(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
             tar.addPrev(this);
-            
+            if (waitQueue.transferPriority)
             System.out.println("WaitForAccess: " + this + " is now waiting " + waitQueue.node);
         }
 
@@ -398,9 +401,16 @@ public class PriorityScheduler extends Scheduler {
 	 */
         public void acquire(PriorityQueue waitQueue) {
             ThreadState tar = waitQueue.node;
-            if (tar.pr.contains(this))
+            if (tar.pr.contains(this)) {
+            	if (waitQueue.transferPriority)
+            	System.out.println("Acquire: " + this + " no longer waits " + tar);
             	tar.delPrev(this);
+            }
+            
+            Lib.assertTrue(tar.ne.isEmpty());
+            
             this.addPrev(tar);
+            if (waitQueue.transferPriority)
             System.out.println("Acquire: " + this + " now acquires " + waitQueue.node);
 
         }

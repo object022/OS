@@ -94,7 +94,7 @@ public class Boat
 	toBoat = new Communicator();
 	onOahu = new Communicator();
 	onMolokai = new Communicator();
-	cheat = new Communicator();
+	//cheat = new Communicator();
 	// Instantiate global variables here
 	
 	// Create threads here. See section 3.4 of the Nachos for Java
@@ -119,6 +119,12 @@ public class Boat
 	for (int i = 0; i < children; i++)
 		tlist.add(new KThread(runnableChildren).setName("Child #" + i));
 	Collections.shuffle(tlist);
+	
+	
+	ThreadedKernel.scheduler.increasePriority();
+	
+	
+	
 	for (int i = 0; i < tlist.size(); i++)
 		tlist.get(i).fork();
 	while (true) {
@@ -131,11 +137,11 @@ public class Boat
 		case -1: // Adult arrives
 			adults--;
 			break;
-		case 0: // Leader on Molokai, waiting decision: THIS IS CHEATING
+		case 0: // Leader on Molokai, waiting decision...
 			if ((children == 2) && (adults == 0)) // Assistant is already on Molokai
 				return;
 			//System.out.println("Boat: Leader should pass, people remaining = " + children  + " " + adults);
-			cheat.speak(0);
+			//cheat.speak(0);
 		}
 	}
 	
@@ -150,6 +156,11 @@ public class Boat
 	/*
 	 * wake up - wake leader - row to Molokai - wake assistant
 	 */
+	
+	
+	ThreadedKernel.scheduler.decreasePriority();
+	
+	
 	lock.acquire();
 	reported++;
 	if (!forceEnter)
@@ -178,6 +189,12 @@ public class Boat
 	bg.initializeChild(); //Required for autograder interface. Must be the first thing called.
 	//DO NOT PUT ANYTHING ABOVE THIS LINE. 
 	
+	
+
+	ThreadedKernel.scheduler.decreasePriority();
+	
+	
+	
 	//Electing the leader and assistant
 	//Decide the ID
 	int id = -1;
@@ -196,7 +213,7 @@ public class Boat
 		lock.acquire();
 		if (reported == 0) {
 			toBoat.speak(0);
-			cheat.listen();
+			KThread.yield();//cheat.listen();
 		}
 		lock.release();
 		
@@ -223,7 +240,7 @@ public class Boat
 				lock.acquire();
 				if (reported == 0) {
 					toBoat.speak(0);
-					cheat.listen();
+					KThread.yield();//cheat.listen();
 				}
 				lock.release();
 				
@@ -248,7 +265,7 @@ public class Boat
 				lock.acquire();
 				if (reported == 0) {
 					toBoat.speak(0);
-					cheat.listen();
+					KThread.yield();//cheat.listen();
 				}
 				lock.release();
 				
