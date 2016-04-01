@@ -330,8 +330,19 @@ public class PriorityScheduler extends Scheduler {
 	 *
 	 * @return	the effective priority of the associated thread.
 	 */
+        public int recursivePrev() {
+        	int ret = priority;
+        	for (Iterator<ThreadState> iter = pr.iterator(); iter.hasNext();) {
+        		ret = Math.max(ret, iter.next().recursivePrev());
+        	}
+        	return ret;
+        }
         public int getEffectivePriority() {
-            return current;
+        	
+        	int temp = recursivePrev();
+        	if (temp != current) System.out.println("ERROR at " + this + " Calculated " + temp);
+            return temp;
+        	//return current;
         }
 
 	/**
