@@ -23,6 +23,8 @@ public class Tests {
 	 * @return A string indicating the result of the test
 	 */
 	public String testJoin(final int n) {
+		return "disabled";
+		/*
 		List<KThread> tlist = new LinkedList<KThread> ();
 		List<KThread> joinList = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
@@ -69,6 +71,7 @@ public class Tests {
 			
 		}
 		return "KThread.Join Succeed N = " + Integer.toString(n);
+		*/
 	}
 	/**
 	 * Testing the wait() and notify() for Condition2, Part 1.
@@ -78,6 +81,8 @@ public class Tests {
 	 */
 	
 	public String testCond1(int n) {
+		return "disabled";
+		/*
 		Lock lock = new Lock();
 		Condition2 cond = new Condition2(lock);
 		LinkedList<KThread> tlist = new LinkedList<KThread> ();
@@ -134,6 +139,7 @@ public class Tests {
         }
 		return "Condition Variable Test 1 Succeed N = " + Integer.toString(n)
 			+ " # of threads not woke up = " + prefix;
+			*/
 	}
 	/**
 	 * Testing the wait() and notifyAll() for Condition2.
@@ -143,6 +149,8 @@ public class Tests {
 	 **/
 	Integer counter = 0; // For testCond2 only
 	public String testCond2(int n) {
+		return "disabled";
+		/*
 		LinkedList<Lock> locks = new LinkedList<Lock> ();
 		LinkedList<Condition2> conds = new LinkedList<Condition2> ();
 		LinkedList<KThread> threads = new LinkedList<KThread> ();
@@ -179,6 +187,7 @@ public class Tests {
 				return "Wrong joining order at " + Integer.toString(i);
 
 		return "Conditional Variable Test 2 passed, N = " + Integer.toString(n);
+		*/
 	}
 
 	/**
@@ -186,6 +195,8 @@ public class Tests {
 	 * Generate N speakers and listeners and they should form a queue.
 	 */
 	public String testComm1(int n) {
+		return "disabled";
+		/*
 		LinkedList<Communicator> comm = new LinkedList<Communicator> ();
 		LinkedList<KThread> tlist = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) comm.add(new Communicator());
@@ -218,6 +229,7 @@ public class Tests {
 			if ((Integer) o != i) return "Incorrect order at " +  Integer.toString((Integer) o);
 		}
 		return "Communicator Test 1 passed, N = " + Integer.toString(n);
+		*/
 	}
 	/**
 	 * Testing the Communicator class.
@@ -225,6 +237,8 @@ public class Tests {
 	 * A single communicator should be able to hold the alternating call of speak and listen.
 	 */
 	public String testComm2(int n) {
+		return "disabled";
+		/*
 		Communicator comm = new Communicator();
 		KThread ping = new KThread(new Runnable() {
 			@Override
@@ -270,12 +284,15 @@ public class Tests {
 		}
 		if (s != n) return "Error: incorrect message queue length: " + s;
 		return "Communicator Test 2 passed, N = " + Integer.toString(n);
+		*/
 	}
 	/**
 	 * Testing the Communicator class, Part 3.
 	 * We now try to dump a lot of requests on the same communicator.
 	 */
 	public String testComm3(int n) {
+		return "disabled";
+		/*
 		LinkedList<KThread> tlist = new LinkedList<KThread> ();
 		Communicator comm = new Communicator(); 
 		for (int i = 0; i < n; i++) {
@@ -305,11 +322,14 @@ public class Tests {
 			if (o == null) return "Wrong queue size";
 		}
 		return "Communicator Test 3 passed, N = " + n;
+		*/
 	}
 	/**
 	 * Testing the Alarm class.
 	 */
 	public String testAlarm(int n, int interval) {
+		return "disabled";
+		/*
 		LinkedList<KThread> tlist = new LinkedList<KThread> ();
 		for (int i = 0; i < n; i++) {
 			final int thisId = i;
@@ -330,6 +350,7 @@ public class Tests {
 			System.out.println(o);
 		}
 		return "Alarm Test ended, N = " + n + " Int = " + interval + ", please check the results";
+		*/
 	}
 	/**
 	 * Testing the Boat class - Moved to Boat.selfTest()

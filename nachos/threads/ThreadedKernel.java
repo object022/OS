@@ -2,8 +2,6 @@ package nachos.threads;
 
 import nachos.ag.AutoGrader;
 import nachos.ag.BoatGrader;
-import nachos.ag.PriorityGrader;
-import nachos.ag.PriorityGraderS1;
 import nachos.machine.*;
 
 /**
