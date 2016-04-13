@@ -1,7 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import nachos.threads.PriorityScheduler.ThreadState;
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -48,7 +48,7 @@ public class KThread {
 	}	    
 	else {
 	    readyQueue = ThreadedKernel.scheduler.newThreadQueue(false);
-	    readyQueue.acquire(this);	    
+	    readyQueue.acquire(this);
 
 	    currentThread = this;
 	    tcb = TCB.currentTCB();
@@ -56,6 +56,7 @@ public class KThread {
 	    restoreState();
 
 	    createIdleThread();
+	    
 	}
     }
 
@@ -67,6 +68,10 @@ public class KThread {
     public KThread(Runnable target) {
 	this();
 	this.target = target;
+	
+	boolean intStatus = Machine.interrupt().disable();
+	waitQueue.acquire(this);
+	Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -113,7 +118,13 @@ public class KThread {
     public String toString() {
 	return (name + " (#" + id + ")");
     }
-
+    
+    /**
+     * Testing against the null TCB - only for debugging purposes
+     */
+    public TCB getTCB() {
+    	return tcb;
+    }
     /**
      * Deterministically and consistently compare this thread to another
      * thread.
@@ -169,6 +180,7 @@ public class KThread {
 	restoreState();
 
 	Machine.interrupt().enable();
+	
     }
 
     /**
@@ -191,8 +203,11 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
-
-	currentThread.status = statusFinished;
+	KThread thread;
+	while ((thread = toBeDestroyed.waitQueue.nextThread()) != null)
+	    thread.ready();
+	
+	toBeDestroyed.status = statusFinished;
 	
 	sleep();
     }
@@ -272,11 +287,25 @@ public class KThread {
      * call is not guaranteed to return. This thread must not be the current
      * thread.
      */
+    
+    // CondVar to implement Join()
+    public ThreadQueue waitQueue =
+    		ThreadedKernel.scheduler.newThreadQueue(true);
     public void join() {
-	Lib.debug(dbgThread, "Joining to thread: " + toString());
+	Lib.debug(dbgThread, currentThread.toString() + " Joining to thread: " + toString());
+	
+	boolean intStatus = Machine.interrupt().disable();
+	KThread thread = KThread.currentThread();
 
+	if (status != statusFinished) {
+	    waitQueue.waitForAccess(thread);
+	    KThread.sleep();
+	}
+	Machine.interrupt().restore(intStatus);
+	
+	Lib.debug(dbgThread, currentThread.toString() + " Joined to thread: " + toString());
 	Lib.assertTrue(this != currentThread);
-
+	
     }
 
     /**
@@ -345,6 +374,10 @@ public class KThread {
 
 	currentThread = this;
 
+	if (tcb == null) {
+		System.out.println(this);
+	}
+	
 	tcb.contextSwitch();
 
 	currentThread.restoreState();
@@ -403,10 +436,9 @@ public class KThread {
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
 	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new PingTest(0).run();
-    }
-
+	//new KThread(new PingTest(1)).setName("forked thread").fork();
+	//new PingTest(0).run();
+	System.out.println(new Tests().testJoin(15)); }
     private static final char dbgThread = 't';
 
     /**

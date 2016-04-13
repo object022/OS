@@ -1,5 +1,9 @@
 package nachos.threads;
 
+import nachos.ag.AutoGrader;
+import nachos.ag.BoatGrader;
+import nachos.ag.PriorityGrader;
+import nachos.ag.PriorityGraderS1;
 import nachos.machine.*;
 
 /**
@@ -47,11 +51,15 @@ public class ThreadedKernel extends Kernel {
      */	
     public void selfTest() {
 	KThread.selfTest();
-	Semaphore.selfTest();
-	SynchList.selfTest();
-	if (Machine.bank() != null) {
-	    ElevatorBank.selfTest();
-	}
+	//Semaphore.selfTest();
+	Condition2.selfTest();
+	Communicator.selfTest();
+	Boat.selfTest();
+	Alarm.selfTest();
+	//SynchList.selfTest();
+	//if (Machine.bank() != null) {
+	  //  ElevatorBank.selfTest();
+	//}
     }
     
     /**

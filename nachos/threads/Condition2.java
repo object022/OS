@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
 
 /**
@@ -21,7 +23,9 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	this.conditionLock = conditionLock;
+    	this.conditionLock = conditionLock;
+    	waitQueue =
+    			ThreadedKernel.scheduler.newThreadQueue(true);
     }
 
     /**
@@ -31,11 +35,13 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	conditionLock.release();
-
-	conditionLock.acquire();
+    	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	boolean intStatus = Machine.interrupt().disable();
+    	waitQueue.waitForAccess(KThread.currentThread());
+    	conditionLock.release();
+    	KThread.sleep();
+    	conditionLock.acquire();
+    	Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -44,6 +50,12 @@ public class Condition2 {
      */
     public void wake() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	boolean intStatus = Machine.interrupt().disable();
+	KThread next;
+	if ((next = waitQueue.nextThread()) != null)
+	    next.ready();
+	Machine.interrupt().restore(intStatus);
+
     }
 
     /**
@@ -52,7 +64,20 @@ public class Condition2 {
      */
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	boolean intStatus = Machine.interrupt().disable();
+	KThread next;
+	while ((next = waitQueue.nextThread()) != null)
+	    next.ready();
+	Machine.interrupt().restore(intStatus);
     }
-
+    
+    
+    public static void selfTest() {
+    	System.out.println(new Tests().testCond1(10));
+    	System.out.println(new Tests().testCond2(10));
+    }
+    
+    
     private Lock conditionLock;
+    private ThreadQueue waitQueue;
 }

@@ -49,7 +49,16 @@ public class SynchList {
 
 	return o;
     }
+    public Object removeFirstNoWait() {
+    	Object o;
 
+    	lock.acquire();
+    	if (list.isEmpty()) o = null;
+    	else o = list.removeFirst();
+    	lock.release();
+
+    	return o;
+    }
     private static class PingTest implements Runnable {
 	PingTest(SynchList ping, SynchList pong) {
 	    this.ping = ping;
