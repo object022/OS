@@ -94,7 +94,7 @@ public class Boat
 	toBoat = new Communicator();
 	onOahu = new Communicator();
 	onMolokai = new Communicator();
-	//cheat = new Communicator();
+	cheat = new Communicator();
 	// Instantiate global variables here
 	
 	// Create threads here. See section 3.4 of the Nachos for Java
@@ -141,7 +141,7 @@ public class Boat
 			if ((children == 2) && (adults == 0)) // Assistant is already on Molokai
 				return;
 			//System.out.println("Boat: Leader should pass, people remaining = " + children  + " " + adults);
-			//cheat.speak(0);
+			cheat.speak(0);
 		}
 	}
 	
@@ -213,7 +213,8 @@ public class Boat
 		lock.acquire();
 		if (reported == 0) {
 			toBoat.speak(0);
-			KThread.yield();//cheat.listen();
+			//KThread.yield();
+			cheat.listen();
 		}
 		lock.release();
 		
@@ -240,7 +241,8 @@ public class Boat
 				lock.acquire();
 				if (reported == 0) {
 					toBoat.speak(0);
-					KThread.yield();//cheat.listen();
+					//KThread.yield();
+					cheat.listen();
 				}
 				lock.release();
 				
@@ -265,7 +267,8 @@ public class Boat
 				lock.acquire();
 				if (reported == 0) {
 					toBoat.speak(0);
-					KThread.yield();//cheat.listen();
+					//KThread.yield();
+					cheat.listen();
 				}
 				lock.release();
 				
