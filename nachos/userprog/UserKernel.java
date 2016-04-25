@@ -1,5 +1,7 @@
 package nachos.userprog;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
@@ -21,7 +23,13 @@ public class UserKernel extends ThreadedKernel {
      */
     public void initialize(String[] args) {
 	super.initialize(args);
-
+	//Assume this calls only once...
+	fpLock = new Lock();
+	freePages = new LinkedList<Integer> ();
+	fpLock.acquire();
+	for (int i = 0; i < Machine.processor().getNumPhysPages(); i++)
+		freePages.add(i);
+	fpLock.release();
 	console = new SynchConsole(Machine.console());
 	
 	Machine.processor().setExceptionHandler(new Runnable() {
@@ -30,12 +38,32 @@ public class UserKernel extends ThreadedKernel {
     }
 
     /**
+     * Synch'd fetch a free page number.
+     * As the # of free page requests are not a lot in each process(8 only), we don't implement bulk request.
+     * Also this is to intentionally make fragments in physical page addresses to test robustness.
+     */
+    public static int requestPP() {
+    	fpLock.acquire();
+    	int res = -1;
+    	if (!freePages.isEmpty()) res = freePages.removeFirst();
+    	fpLock.release();
+    	return res;
+    }
+    /**
+     * Synch'd release a page number.
+     */
+    public static void releasePP(int num) {
+    	fpLock.acquire();
+    	freePages.addFirst(num); // Re-usage for pages with smaller IDs
+    	fpLock.release();
+    }
+    /**
      * Test the console device.
      */	
     public void selfTest() {
 	super.selfTest();
 
-	System.out.println("Testing the console device. Typed characters");
+	/*System.out.println("Testing the console device. Typed characters");
 	System.out.println("will be echoed until q is typed.");
 
 	char c;
@@ -47,6 +75,8 @@ public class UserKernel extends ThreadedKernel {
 	while (c != 'q');
 
 	System.out.println("");
+	*/
+	Tests.VMTest();
     }
 
     /**
@@ -97,7 +127,7 @@ public class UserKernel extends ThreadedKernel {
 	String shellProgram = Machine.getShellProgramName();	
 	Lib.assertTrue(process.execute(shellProgram, new String[] { }));
 
-	KThread.currentThread().finish();
+	KThread.finish();
     }
 
     /**
@@ -106,10 +136,12 @@ public class UserKernel extends ThreadedKernel {
     public void terminate() {
 	super.terminate();
     }
-
+    
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
 
+    private static LinkedList<Integer> freePages = null;
+    private static Lock fpLock = null;
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
 }

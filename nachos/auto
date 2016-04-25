@@ -1,0 +1,6 @@
+cd test
+make
+cd ..
+git add .
+git commit -a -m "serverside_commit"
+git push origin master

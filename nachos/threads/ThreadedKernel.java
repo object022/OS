@@ -48,12 +48,12 @@ public class ThreadedKernel extends Kernel {
      * tests here.
      */	
     public void selfTest() {
-	KThread.selfTest();
+	//KThread.selfTest();
 	//Semaphore.selfTest();
-	Condition2.selfTest();
-	Communicator.selfTest();
-	Boat.selfTest();
-	Alarm.selfTest();
+	//Condition2.selfTest();
+	//Communicator.selfTest();
+	//Boat.selfTest();
+	//Alarm.selfTest();
 	//SynchList.selfTest();
 	//if (Machine.bank() != null) {
 	  //  ElevatorBank.selfTest();
@@ -84,7 +84,7 @@ public class ThreadedKernel extends Kernel {
     // dummy variables to make javac smarter
     private static RoundRobinScheduler dummy1 = null;
     private static PriorityScheduler dummy2 = null;
-    private static LotteryScheduler dummy3 = null;
+    //private static LotteryScheduler dummy3 = null;
     private static Condition2 dummy4 = null;
     private static Communicator dummy5 = null;
     private static Rider dummy6 = null;

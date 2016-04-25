@@ -1,1 +1,9 @@
 *.swp
+/bin/*
+.classpath
+.project
+.c9/*
+test/a.txt
+test/b.txt
+*.txt
+*.out

@@ -383,6 +383,10 @@ public class KThread {
 	currentThread.restoreState();
     }
 
+    public boolean isFinished() {
+    	return (status == statusFinished);
+    }
+    
     /**
      * Prepare this thread to be run. Set <tt>status</tt> to
      * <tt>statusRunning</tt> and check <tt>toBeDestroyed</tt>.
